@@ -7,7 +7,7 @@ import { AdminProgram } from './admin/AdminProgram'
 import { AdminGaleri } from './admin/AdminGaleri'
 import { AdminPengaturan } from './admin/AdminPengaturan'
 import { Logo } from './Logo'
-import { LayoutDashboard, BookOpen, Image as ImageIcon, Settings, LogOut, Bell } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Image as ImageIcon, Settings, LogOut, Bell, ArrowLeft } from 'lucide-react'
 
 type MenuKey = 'dashboard' | 'program' | 'galeri' | 'pengaturan'
 
@@ -49,7 +49,7 @@ export function AdminPage({ onExit }: { onExit: () => void }) {
     onExit()
   }
 
-  if (!loggedIn) return <AdminLogin onLogin={handleLogin} />
+  if (!loggedIn) return <AdminLogin onLogin={handleLogin} onBack={onExit} />
 
   return (
     <div className="min-h-screen bg-[#F7F7F9] flex">
@@ -90,9 +90,19 @@ export function AdminPage({ onExit }: { onExit: () => void }) {
 
       <main className="flex-1 min-w-0 flex flex-col">
         <header className="h-20 bg-white border-b border-[#0A1F44]/10 flex items-center justify-between px-8 sticky top-0 z-10">
-          <div>
-            <p className="text-[#0A1F44]/40 text-xs uppercase tracking-widest" style={{ fontWeight: 800 }}>{SUBS[active]}</p>
-            <h1 className="text-[#0A1F44]" style={{ fontWeight: 900, fontSize: 22, letterSpacing: '-0.02em' }}>{TITLES[active]}</h1>
+          <div className="flex items-center gap-4">
+            <button onClick={onExit}
+              className="flex items-center gap-1.5 text-[#0A1F44]/65 hover:text-[#E63946] transition-colors cursor-pointer"
+              style={{ fontWeight: 700, fontSize: 14 }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Kembali</span>
+            </button>
+            <div className="h-8 w-px bg-[#0A1F44]/10"></div>
+            <div>
+              <p className="text-[#0A1F44]/40 text-xs uppercase tracking-widest" style={{ fontWeight: 800 }}>{SUBS[active]}</p>
+              <h1 className="text-[#0A1F44]" style={{ fontWeight: 900, fontSize: 22, letterSpacing: '-0.02em' }}>{TITLES[active]}</h1>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button className="w-10 h-10 rounded-full bg-[#F7F7F9] flex items-center justify-center text-[#0A1F44]"><Bell className="w-5 h-5" /></button>

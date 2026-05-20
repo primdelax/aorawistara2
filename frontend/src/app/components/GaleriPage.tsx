@@ -1,176 +1,284 @@
 // src/app/components/GaleriPage.tsx
-// ✅ Data galeri diambil langsung dari backend API (tidak ada data hardcoded)
+// ✅ 5 Kategori statis (Batik, Melukis, Personality, Sablon, Tari)
+//    dengan gambar lokal dari backend/uploads/gallery/
 
-import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
-import { galleryApi, type GalleryItem } from '../lib/api'
-import { ImageWithFallback } from './figma/ImageWithFallback'
+import { useState } from 'react'
+import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
-export function GaleriPage() {
-  const [items,    setItems]    = useState<GalleryItem[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState<string | null>(null)
-  const [activeCategory, setActiveCategory] = useState<string>('Semua')
+// ─── Base URL untuk gambar (dari folder public/gallery Vite) ────────────────
+const BASE = '/gallery'
 
-  const fetchGallery = async (signal?: AbortSignal) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await galleryApi.getAll()
-      if (!signal?.aborted) {
-        setItems(data)
-      }
-    } catch (e) {
-      if (!signal?.aborted)
-        setError(e instanceof Error ? e.message : 'Gagal memuat galeri')
-    } finally {
-      if (!signal?.aborted) setLoading(false)
-    }
-  }
+// ─── Data Kategori ──────────────────────────────────────────────────────────
+interface Category {
+  id: string
+  name: string
+  description: string
+  cover: string          // gambar thumbnail untuk grid kategori
+  color: string          // warna aksen
+  images: { src: string; caption: string }[]
+}
 
-  useEffect(() => {
-    const controller = new AbortController()
-    fetchGallery(controller.signal)
-    return () => controller.abort()
-  }, [])
+const CATEGORIES: Category[] = [
+  {
+    id: 'batik',
+    name: 'Batik',
+    description: 'Seni membatik tradisional — dari lilin malam hingga karya kain yang memukau.',
+    cover: `${BASE}/batik1.jpg`,
+    color: '#C0392B',
+    images: [
+      { src: `${BASE}/batik1.jpg`, caption: 'Proses membatik dengan canting' },
+      { src: `${BASE}/batik2.jpg`, caption: 'Karya batik yang sudah jadi' },
+    ],
+  },
+  {
+    id: 'melukis',
+    name: 'Melukis',
+    description: 'Ekspresi jiwa lewat kuas dan cat — setiap goresan adalah cerita.',
+    cover: `${BASE}/melukis1.jpg`,
+    color: '#2471A3',
+    images: [
+      { src: `${BASE}/melukis1.jpg`, caption: 'Sesi melukis bersama' },
+      { src: `${BASE}/melukis2.png`, caption: 'Karya lukis anggota' },
+      { src: `${BASE}/melukis3.jpg`, caption: 'Workshop melukis outdoor' },
+      { src: `${BASE}/melukis4.jpg`, caption: 'Detail teknik kuas' },
+      { src: `${BASE}/melukis5.jpg`, caption: 'Pameran karya lukis' },
+      { src: `${BASE}/melukis6.jpg`, caption: 'Eksplorasi warna akrilik' },
+    ],
+  },
+  {
+    id: 'personality',
+    name: 'Personality',
+    description: 'Momen kebersamaan, potret diri, dan karakter unik setiap anggota AORA.',
+    cover: `${BASE}/personality1.jpg`,
+    color: '#1E8449',
+    images: [
+      { src: `${BASE}/personality1.jpg`, caption: 'Potret anggota AORA Wistara' },
+    ],
+  },
+  {
+    id: 'sablon',
+    name: 'Sablon',
+    description: 'Dari desain digital ke media cetak — seni sablon yang penuh kreativitas.',
+    cover: `${BASE}/sablon1.jpg`,
+    color: '#6C3483',
+    images: [
+      { src: `${BASE}/sablon1.jpg`, caption: 'Proses cetak sablon kaus' },
+    ],
+  },
+  {
+    id: 'tari',
+    name: 'Tari',
+    description: 'Gerak yang bercerita — pentas tari tradisional dan kontemporer.',
+    cover: `${BASE}/tari1.jpg`,
+    color: '#D4AC0D',
+    images: [
+      { src: `${BASE}/tari1.jpg`, caption: 'Pentas tari tradisional' },
+      { src: `${BASE}/tari2.png`, caption: 'Latihan tari bersama' },
+    ],
+  },
+]
 
-  // ─── Derive categories from real database data ───────────────────────────
-  const categories: string[] = [
-    'Semua',
-    ...Array.from(
-      new Set(
-        items
-          .map((i) => i.category)
-          .filter((c): c is string => Boolean(c))
-      )
-    ),
-  ]
+// ─── Lightbox ───────────────────────────────────────────────────────────────
+function Lightbox({
+  images,
+  index,
+  onClose,
+  onPrev,
+  onNext,
+}: {
+  images: { src: string; caption: string }[]
+  index: number
+  onClose: () => void
+  onPrev: () => void
+  onNext: () => void
+}) {
+  const img = images[index]
+  return (
+    <div
+      className="galeri-lightbox-overlay"
+      onClick={onClose}
+    >
+      <div className="galeri-lightbox-box" onClick={(e) => e.stopPropagation()}>
+        {/* close */}
+        <button className="galeri-lightbox-close" onClick={onClose}>
+          <X size={22} />
+        </button>
 
-  const filtered =
-    activeCategory === 'Semua'
-      ? items
-      : items.filter((i) => i.category === activeCategory)
+        {/* image */}
+        <div className="galeri-lightbox-img-wrap">
+          <img src={img.src} alt={img.caption} className="galeri-lightbox-img" />
+        </div>
+
+        {/* nav */}
+        <div className="galeri-lightbox-nav">
+          <button
+            className="galeri-lightbox-arrow"
+            onClick={onPrev}
+            disabled={index === 0}
+          >
+            <ChevronLeft size={28} />
+          </button>
+          <div className="galeri-lightbox-caption">
+            <p>{img.caption}</p>
+            <span>{index + 1} / {images.length}</span>
+          </div>
+          <button
+            className="galeri-lightbox-arrow"
+            onClick={onNext}
+            disabled={index === images.length - 1}
+          >
+            <ChevronRight size={28} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Detail View (setelah klik kategori) ────────────────────────────────────
+function CategoryDetail({
+  category,
+  onBack,
+}: {
+  category: Category
+  onBack: () => void
+}) {
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
 
   return (
     <div>
-      {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="bg-[#0A1F44] text-white py-20 relative overflow-hidden">
-        <div className="absolute -bottom-20 -right-20 w-[400px] h-[400px] rounded-full bg-[#E63946]/20 blur-3xl" />
-        <div className="relative max-w-7xl mx-auto px-6">
-          <span
-            className="inline-block px-3 py-1 bg-[#E63946] text-white rounded-full uppercase text-xs"
-            style={{ fontWeight: 800, letterSpacing: '0.15em' }}
-          >
-            Dokumentasi
+      {/* ── HERO DETAIL ─────────────────────────────────────────────────── */}
+      <section
+        className="galeri-detail-hero"
+        style={{ '--accent': category.color } as React.CSSProperties}
+      >
+        <div className="galeri-detail-hero-bg">
+          <img src={category.cover} alt={category.name} className="galeri-detail-hero-cover" />
+          <div className="galeri-detail-hero-overlay" />
+        </div>
+        <div className="galeri-detail-hero-content">
+          <button className="galeri-back-btn" onClick={onBack}>
+            <ArrowLeft size={18} />
+            <span>Kembali ke Galeri</span>
+          </button>
+          <span className="galeri-detail-badge" style={{ background: category.color }}>
+            {category.name}
           </span>
-          <h1
-            className="mt-5"
-            style={{
-              fontWeight: 900,
-              fontSize: 'clamp(44px, 7vw, 80px)',
-              lineHeight: 0.95,
-              letterSpacing: '-0.04em',
-            }}
-          >
-            Galeri <span className="text-[#E63946]">Kegiatan</span>
+          <h1 className="galeri-detail-title">{category.name}</h1>
+          <p className="galeri-detail-desc">{category.description}</p>
+          <p className="galeri-detail-count">{category.images.length} Foto</p>
+        </div>
+      </section>
+
+      {/* ── GRID FOTO ───────────────────────────────────────────────────── */}
+      <section className="galeri-detail-grid-section">
+        <div className="galeri-detail-grid">
+          {category.images.map((img, i) => (
+            <div
+              key={i}
+              className="galeri-detail-card"
+              onClick={() => setLightboxIdx(i)}
+            >
+              <img src={img.src} alt={img.caption} className="galeri-detail-card-img" />
+              <div className="galeri-detail-card-overlay">
+                <p className="galeri-detail-card-caption">{img.caption}</p>
+                <span className="galeri-detail-card-num">#{i + 1}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── LIGHTBOX ────────────────────────────────────────────────────── */}
+      {lightboxIdx !== null && (
+        <Lightbox
+          images={category.images}
+          index={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+          onPrev={() => setLightboxIdx((p) => Math.max(0, (p ?? 0) - 1))}
+          onNext={() =>
+            setLightboxIdx((p) => Math.min(category.images.length - 1, (p ?? 0) + 1))
+          }
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Main GaleriPage ────────────────────────────────────────────────────────
+export function GaleriPage() {
+  const [selected, setSelected] = useState<Category | null>(null)
+
+  if (selected) {
+    return (
+      <CategoryDetail
+        category={selected}
+        onBack={() => setSelected(null)}
+      />
+    )
+  }
+
+  return (
+    <div>
+      {/* ── HERO ──────────────────────────────────────────────────────── */}
+      <section className="galeri-hero">
+        <div className="galeri-hero-blob galeri-hero-blob-1" />
+        <div className="galeri-hero-blob galeri-hero-blob-2" />
+        <div className="galeri-hero-inner">
+          <span className="galeri-hero-badge">Dokumentasi</span>
+          <h1 className="galeri-hero-title">
+            Galeri <span className="galeri-hero-accent">Kegiatan</span>
           </h1>
-          <p className="mt-5 text-white/70 max-w-2xl">
-            Energi, semangat, dan momen luar biasa dari komunitas AORA Wistara.
+          <p className="galeri-hero-subtitle">
+            Pilih kategori di bawah untuk menjelajahi momen-momen luar biasa
+            dari komunitas <strong>AORA Wistara</strong>.
           </p>
         </div>
       </section>
 
-      {/* ── FILTER KATEGORI (dari database) ─────────────────────────── */}
-      <section className="py-12 bg-white sticky top-20 z-30 border-b border-[#0A1F44]/10">
-        <div className="max-w-7xl mx-auto px-6 flex gap-2 flex-wrap">
-          {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="px-5 py-2.5 rounded-full bg-[#F7F7F9] animate-pulse w-24 h-10"
-                />
-              ))
-            : categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setActiveCategory(c)}
-                  className={`px-5 py-2.5 rounded-full transition-all ${
-                    activeCategory === c
-                      ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/30'
-                      : 'bg-[#F7F7F9] text-[#0A1F44] hover:bg-[#0A1F44] hover:text-white'
-                  }`}
-                  style={{ fontWeight: 700 }}
-                >
-                  {c}
-                </button>
-              ))}
+      {/* ── KATEGORI GRID ─────────────────────────────────────────────── */}
+      <section className="galeri-cat-section">
+        <div className="galeri-cat-header">
+          <h2 className="galeri-cat-heading">Pilih Kategori</h2>
+          <p className="galeri-cat-sub">{CATEGORIES.length} kategori tersedia</p>
         </div>
-      </section>
 
-      {/* ── GRID FOTO ────────────────────────────────────────────────── */}
-      <section className="py-16 bg-[#F7F7F9]">
-        {loading && (
-          <div className="py-20 text-center text-[#0A1F44]/40">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3" />
-            <p style={{ fontWeight: 600 }}>Memuat galeri…</p>
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="py-20 text-center">
-            <p className="text-[#E63946]" style={{ fontWeight: 700 }}>
-              {error}
-            </p>
+        <div className="galeri-cat-grid">
+          {CATEGORIES.map((cat) => (
             <button
-              onClick={() => fetchGallery()}
-              className="mt-4 px-6 py-2.5 bg-[#E63946] text-white rounded-full hover:bg-[#c42d3a] transition-colors"
-              style={{ fontWeight: 700 }}
+              key={cat.id}
+              className="galeri-cat-card"
+              onClick={() => setSelected(cat)}
+              aria-label={`Lihat kategori ${cat.name}`}
             >
-              Coba Lagi
+              {/* Background image */}
+              <img src={cat.cover} alt={cat.name} className="galeri-cat-card-img" />
+
+              {/* Gradient overlay */}
+              <div
+                className="galeri-cat-card-overlay"
+                style={{ '--cat-color': cat.color } as React.CSSProperties}
+              />
+
+              {/* Count badge */}
+              <span className="galeri-cat-count" style={{ background: cat.color }}>
+                {cat.images.length} Foto
+              </span>
+
+              {/* Bottom content */}
+              <div className="galeri-cat-card-body">
+                <h3 className="galeri-cat-card-name">{cat.name}</h3>
+                <p className="galeri-cat-card-desc">{cat.description}</p>
+                <span className="galeri-cat-card-cta" style={{ color: cat.color }}>
+                  Lihat Foto →
+                </span>
+              </div>
+
+              {/* Hover shine effect */}
+              <div className="galeri-cat-card-shine" />
             </button>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <>
-            <div className="max-w-7xl mx-auto px-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((item) => (
-                <div
-                  key={item.id}
-                  className="group relative aspect-square rounded-3xl overflow-hidden bg-[#0A1F44]"
-                >
-                  <ImageWithFallback
-                    src={item.image_url}
-                    alt={item.caption ?? item.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1F44]/90 via-transparent to-transparent" />
-                  {item.category && (
-                    <div className="absolute top-4 left-4">
-                      <span
-                        className="bg-[#E63946] text-white px-3 py-1 rounded-full text-xs uppercase"
-                        style={{ fontWeight: 800, letterSpacing: '0.1em' }}
-                      >
-                        {item.category}
-                      </span>
-                    </div>
-                  )}
-                  <div className="absolute bottom-5 left-5 right-5 text-white">
-                    <p style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.01em' }}>
-                      {item.caption ?? item.title}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filtered.length === 0 && (
-              <p className="text-center text-[#0A1F44]/60 mt-10">
-                Belum ada foto untuk kategori ini.
-              </p>
-            )}
-          </>
-        )}
+          ))}
+        </div>
       </section>
     </div>
   )

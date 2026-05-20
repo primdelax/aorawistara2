@@ -27,20 +27,17 @@ Frontend jalan di `http://localhost:5173`
 ### 4. Masuk Admin
 - Klik tombol ⚙️ di pojok kanan bawah website
 - Login: `admin@aorawistara.id`
-- Password: isi sesuai database (default di-hash, lihat catatan di bawah)
+- Password: `admin123` (jika diubah, jalankan `node update_admin.js` di folder `backend` untuk mereset ke `admin123`)
 
 ---
 
 ## Reset Password Admin
 
-Jika lupa password, jalankan ini di terminal:
+Jika lupa atau ingin mereset password ke `admin123`, cukup jalankan ini di terminal folder `backend`:
 ```bash
-node -e "const b=require('bcryptjs'); b.hash('password123',12).then(h=>console.log(h))"
+node update_admin.js
 ```
-Lalu update di phpMyAdmin:
-```sql
-UPDATE users SET password = 'HASH_HASIL_DI_ATAS' WHERE email = 'admin@aorawistara.id';
-```
+Script tersebut akan mendeteksi admin yang sudah ada dan langsung memperbarui password-nya menjadi `admin123`.
 
 ---
 

@@ -4,6 +4,112 @@
 import { ArrowRight, Coffee, Music, Palette, Sparkles, Star } from 'lucide-react'
 import { ImageWithFallback } from './figma/ImageWithFallback'
 import { useSettings, buildWhatsAppUrl } from '../hooks/useSettings'
+import { useEffect, useRef, useState } from 'react'
+import logoAora from '../../images/LOGO AORA POLOS.png'
+
+// ── Gallery images (from /public/gallery) ──────────────────────────────────
+const GALLERY_IMAGES = [
+  '/gallery/tari1.jpg',
+  '/gallery/tari2.png',
+  '/gallery/batik1.jpg',
+  '/gallery/batik2.jpg',
+  '/gallery/melukis1.jpg',
+  '/gallery/melukis2.png',
+  '/gallery/melukis3.jpg',
+  '/gallery/melukis4.jpg',
+  '/gallery/melukis5.jpg',
+  '/gallery/melukis6.jpg',
+  '/gallery/personality1.jpg',
+  '/gallery/sablon1.jpg',
+]
+
+// ── Slideshow Component ────────────────────────────────────────────────────
+function HeroSlideshow() {
+  const [current, setCurrent] = useState(0)
+  const [animClass, setAnimClass] = useState('')
+  const throwDirRef = useRef<'right' | 'left'>('right')
+
+  const nextIndex = (current + 1) % GALLERY_IMAGES.length
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Alternate direction
+      const nextDir = throwDirRef.current === 'right' ? 'left' : 'right'
+      throwDirRef.current = nextDir
+      setAnimClass(nextDir === 'right' ? 'slide-throw-right' : 'slide-throw-left')
+
+      // Switch current image to the next one after the throw animation finishes (500ms)
+      const changeTimer = setTimeout(() => {
+        setCurrent(nextIndex)
+        setAnimClass('')
+      }, 500)
+
+      return () => clearTimeout(changeTimer)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [current, nextIndex])
+
+  return (
+    <div className="absolute inset-4 rounded-3xl overflow-hidden bg-[#0A1F44]">
+      <style>{`
+        @keyframes throwRight {
+          0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+          100% { transform: translate(120%, -80%) rotate(25deg); opacity: 0; }
+        }
+        @keyframes throwLeft {
+          0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+          100% { transform: translate(-120%, -80%) rotate(-25deg); opacity: 0; }
+        }
+        .slide-throw-right { animation: throwRight 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 2; }
+        .slide-throw-left  { animation: throwLeft  0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 2; }
+      `}</style>
+      
+      {/* Background (Next) Image */}
+      <img
+        src={GALLERY_IMAGES[nextIndex]}
+        alt="Next Slide"
+        className="w-full h-full object-cover"
+        style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+      />
+
+      {/* Foreground (Current) Image (does the throwing) */}
+      <img
+        key={current}
+        src={GALLERY_IMAGES[current]}
+        alt={`Gallery ${current + 1}`}
+        className={`w-full h-full object-cover ${animClass}`}
+        style={{ position: 'absolute', inset: 0, zIndex: 2 }}
+      />
+
+      {/* dot indicators */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '12px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: '6px',
+          zIndex: 10,
+        }}
+      >
+        {GALLERY_IMAGES.map((_, i) => (
+          <div
+            key={i}
+            style={{
+              width: i === current ? '20px' : '6px',
+              height: '6px',
+              borderRadius: '3px',
+              background: i === current ? '#E63946' : 'rgba(255,255,255,0.5)',
+              transition: 'all 0.3s ease',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
   const { settings } = useSettings()
@@ -30,7 +136,11 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
         <div className="relative max-w-7xl mx-auto px-6 py-24 md:py-32 grid md:grid-cols-12 gap-10 items-center">
           <div className="md:col-span-7">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full mb-6 border border-white/20">
-              <Star className="w-4 h-4 text-[#E63946]" fill="#E63946" />
+              <img
+                src={logoAora}
+                alt="Logo AORA"
+                style={{ width: '22px', height: '22px', objectFit: 'contain', flexShrink: 0 }}
+              />
               <span
                 style={{ fontWeight: 700, letterSpacing: '0.1em', fontSize: '12px' }}
                 className="uppercase"
@@ -87,15 +197,9 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
             <div className="relative aspect-square">
               <div className="absolute inset-0 bg-[#E63946] rounded-3xl rotate-6" />
               <div className="absolute inset-0 bg-white/10 backdrop-blur rounded-3xl -rotate-3 border border-white/20" />
-              <div className="absolute inset-4 rounded-3xl overflow-hidden">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1588696260360-94d653bcc034?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-                  alt="AORA students"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-6 -left-6 bg-white text-[#0A1F44] px-5 py-4 rounded-2xl shadow-xl">
-                <div style={{ fontWeight: 900, fontSize: '32px', lineHeight: 1 }}>7+</div>
+              <HeroSlideshow />
+              <div className="absolute -bottom-6 -left-6 bg-white text-[#0A1F44] px-5 py-4 rounded-2xl shadow-xl z-10">
+                <div style={{ fontWeight: 900, fontSize: '32px', lineHeight: 1 }}>9+</div>
                 <div className="text-xs uppercase tracking-wider" style={{ fontWeight: 700 }}>
                   Program Aktif
                 </div>

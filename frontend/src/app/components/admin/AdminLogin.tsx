@@ -2,9 +2,9 @@
 import { useState } from 'react'
 import { authApi } from '../../lib/api'
 import { Logo } from '../Logo'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 
-export function AdminLogin({ onLogin }: { onLogin: () => void }) {
+export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
   const [email, setEmail] = useState('admin@aorawistara.id')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -80,6 +80,14 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
               style={{ fontWeight: 800, fontSize: 15 }}
             >
               {loading ? 'Memproses...' : 'Masuk ke Dashboard'}
+            </button>
+            <button
+              type="button" onClick={onBack}
+              className="w-full border border-[#0A1F44]/15 hover:bg-[#0A1F44]/5 text-[#0A1F44] py-3.5 rounded-xl mt-3 transition-colors flex items-center justify-center gap-2"
+              style={{ fontWeight: 700, fontSize: 14 }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Kembali ke Beranda</span>
             </button>
           </form>
         </div>

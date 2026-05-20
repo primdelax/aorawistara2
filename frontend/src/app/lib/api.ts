@@ -28,14 +28,42 @@ async function request<T>(
   if (token) headers['Authorization'] = `Bearer ${token}`
   if (!isFormData) headers['Content-Type'] = 'application/json'
 
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    body: isFormData ? (body as FormData)
-      : body ? JSON.stringify(body) : undefined,
-  })
-  const json = await res.json()
-  if (!res.ok) throw new Error(json.message || 'Request gagal')
+  let res: Response
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers,
+      body: isFormData ? (body as FormData)
+        : body ? JSON.stringify(body) : undefined,
+    })
+  } catch (err) {
+    throw new Error('Koneksi ke backend gagal. Pastikan backend server sudah berjalan.')
+  }
+
+  const contentType = res.headers.get('content-type')
+  let json: any = null
+
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      json = await res.json()
+    } catch (e) {
+      throw new Error('Respons dari server tidak valid (gagal memproses format JSON).')
+    }
+  } else {
+    const text = await res.text().catch(() => '')
+    if (!res.ok) {
+      throw new Error(`Server error (${res.status}): ${text || res.statusText || 'Gagal memproses request'}`)
+    }
+    try {
+      json = text ? JSON.parse(text) : {}
+    } catch {
+      json = {}
+    }
+  }
+
+  if (!res.ok) {
+    throw new Error(json?.message || 'Request gagal')
+  }
   return json
 }
 
