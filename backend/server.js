@@ -109,7 +109,7 @@ app.use(
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "🎉 AORA Wistara API is running!",
+    message: "🎉 Aora API is running!",
     version: "1.0.0",
     timestamp: new Date().toISOString(),
     docs: "Lihat README.md untuk dokumentasi API",
@@ -151,7 +151,7 @@ const startServer = async () => {
   app.listen(PORT, () => {
     console.log("\n");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("  🚀 AORA Wistara Backend API");
+    console.log("  🚀 Aora Backend API");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log(`  🌐 URL      : http://localhost:${PORT}`);
     console.log(`  📦 ENV      : ${process.env.NODE_ENV}`);

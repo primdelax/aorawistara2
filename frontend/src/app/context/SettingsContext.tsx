@@ -7,16 +7,16 @@ import { settingsApi, type SiteSettings } from '../lib/api'
 
 // ─── Defaults (shown while loading or if API fails) ─────────────────────────
 export const DEFAULT_SETTINGS: SiteSettings = {
-  site_name:  'AORA Wistara',
+  site_name:  'Aora',
   tagline:    'Kami Beda Tapi Luar Biasa',
   address:    'Indonesia',
   phone:      '6281234567890',
-  email:      'aorawistara@gmail.com',
-  instagram:  'https://instagram.com/aora.wistara',
-  facebook:   'https://facebook.com/aorawistara',
-  youtube:    'https://youtube.com/@aorawistara',
+  email:      'aora@gmail.com',
+  instagram:  'https://instagram.com/aora',
+  facebook:   'https://facebook.com/aora',
+  youtube:    'https://youtube.com/@aora',
   logo_url:   null,
-  about_text: 'AORA Wistara adalah Lembaga Khusus dan Pelatihan (LKP) yang membentuk individu berdaya saing melalui kombinasi keterampilan praktis dan ekspresi seni.',
+  about_text: 'Aora adalah Lembaga Khusus dan Pelatihan (LKP) yang membentuk individu berdaya saing melalui kombinasi keterampilan praktis dan ekspresi seni.',
 }
 
 // ─── Helper: build WhatsApp link from phone setting ─────────────────────────

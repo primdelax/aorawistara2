@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { settingsApi, type SiteSettings } from '../../lib/api'
 import { Check, RefreshCw, Globe, Phone, Mail, Instagram, Youtube, MapPin, Save, X } from 'lucide-react'
 
-const DEFAULT: SiteSettings = { site_name: 'AORA Wistara', tagline: 'Lembaga Kursus & Pelatihan', address: '', phone: '', email: '', instagram: '', facebook: '', youtube: '', logo_url: null, about_text: '' }
+const DEFAULT: SiteSettings = { site_name: 'Aora', tagline: 'Lembaga Kursus & Pelatihan', address: '', phone: '', email: '', instagram: '', facebook: '', youtube: '', logo_url: null, about_text: '' }
 
 export function AdminPengaturan() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT)
@@ -48,7 +48,7 @@ export function AdminPengaturan() {
 
       {/* Identitas */}
       <Section title="Identitas Website" icon={<Globe className="w-4 h-4" />}>
-        <Field label="Nama Website" value={settings.site_name} onChange={v => set('site_name', v)} placeholder="AORA Wistara" />
+        <Field label="Nama Website" value={settings.site_name} onChange={v => set('site_name', v)} placeholder="Aora" />
         <Field label="Tagline / Slogan" value={settings.tagline} onChange={v => set('tagline', v)} placeholder="Lembaga Kursus & Pelatihan" />
         <div>
           <label className="text-[#0A1F44]/60 text-xs uppercase tracking-widest block mb-2" style={{ fontWeight: 800 }}>Tentang Kami</label>
@@ -61,7 +61,7 @@ export function AdminPengaturan() {
       {/* Kontak */}
       <Section title="Informasi Kontak" icon={<Phone className="w-4 h-4" />}>
         <Field label="Nomor Telepon / WhatsApp" value={settings.phone} onChange={v => set('phone', v)} placeholder="+62 812 3456 7890" />
-        <Field label="Email" value={settings.email} onChange={v => set('email', v)} placeholder="info@aorawistara.id" icon={<Mail className="w-4 h-4" />} />
+        <Field label="Email" value={settings.email} onChange={v => set('email', v)} placeholder="info@aora.id" icon={<Mail className="w-4 h-4" />} />
         <div>
           <label className="text-[#0A1F44]/60 text-xs uppercase tracking-widest block mb-2" style={{ fontWeight: 800 }}>Alamat Lengkap</label>
           <textarea value={settings.address} onChange={e => set('address', e.target.value)} rows={3}
@@ -72,9 +72,9 @@ export function AdminPengaturan() {
 
       {/* Medsos */}
       <Section title="Media Sosial" icon={<Instagram className="w-4 h-4" />}>
-        <Field label="Instagram" value={settings.instagram} onChange={v => set('instagram', v)} placeholder="https://instagram.com/aorawistara" />
-        <Field label="Facebook" value={settings.facebook} onChange={v => set('facebook', v)} placeholder="https://facebook.com/aorawistara" />
-        <Field label="YouTube" value={settings.youtube} onChange={v => set('youtube', v)} placeholder="https://youtube.com/@aorawistara" icon={<Youtube className="w-4 h-4" />} />
+        <Field label="Instagram" value={settings.instagram} onChange={v => set('instagram', v)} placeholder="https://instagram.com/aora" />
+        <Field label="Facebook" value={settings.facebook} onChange={v => set('facebook', v)} placeholder="https://facebook.com/aora" />
+        <Field label="YouTube" value={settings.youtube} onChange={v => set('youtube', v)} placeholder="https://youtube.com/@aora" icon={<Youtube className="w-4 h-4" />} />
       </Section>
 
       {/* Maps */}

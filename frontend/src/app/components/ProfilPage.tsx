@@ -9,7 +9,7 @@ import { useSettings } from '../hooks/useSettings'
 export function ProfilPage() {
   const { settings } = useSettings()
 
-  const siteName  = settings.site_name  || 'AORA Wistara'
+  const siteName  = settings.site_name  || 'Aora'
   const tagline   = settings.tagline    || 'Kami Beda Tapi Luar Biasa'
   const aboutText = settings.about_text || ''
 
@@ -20,7 +20,7 @@ export function ProfilPage() {
         <div className="absolute -top-20 right-10 w-[400px] h-[400px] rounded-full bg-[#E63946]/20 blur-3xl" />
         <div className="relative max-w-7xl mx-auto px-6 text-center">
           <div className="inline-block bg-white px-4 py-3 rounded-2xl mb-8">
-            <Logo />
+            <Logo className="h-16" />
           </div>
           <h1
             style={{

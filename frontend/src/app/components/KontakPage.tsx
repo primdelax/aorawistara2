@@ -17,7 +17,7 @@ export function KontakPage() {
             Mari <span className="text-[#E63946]">Terhubung</span>
           </h1>
           <p className="mt-5 text-white/70 max-w-2xl">
-            Tim AORA Wistara siap menjawab pertanyaanmu. Konsultasi gratis dan respon cepat via WhatsApp.
+            Tim Aora siap menjawab pertanyaanmu. Konsultasi gratis dan respon cepat via WhatsApp.
           </p>
         </div>
       </section>
@@ -50,7 +50,7 @@ export function KontakPage() {
               </h3>
               <div className="mt-5 space-y-4">
                 <ContactRow icon={<MapPin />} label="Alamat" value="Jl. Pelatihan No. 1, Indonesia" />
-                <ContactRow icon={<Mail />} label="Email" value="aorawistara@gmail.com" />
+                <ContactRow icon={<Mail />} label="Email" value="aora@gmail.com" />
                 <ContactRow icon={<Phone />} label="Telepon" value="+62 812-3456-7890" />
                 <ContactRow icon={<Clock />} label="Jam Operasional" value="Senin – Sabtu, 08:00 – 17:00 WIB" />
               </div>
@@ -61,10 +61,10 @@ export function KontakPage() {
                 Sosial Media
               </h3>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <SocialRow icon={<Instagram />} label="Instagram" value="@aora.wistara" />
-                <SocialRow icon={<TikTokIcon className="w-5 h-5" />} label="TikTok" value="@aora.wistara" />
-                <SocialRow icon={<Facebook />} label="Facebook" value="Aora Wistara" />
-                <SocialRow icon={<Mail />} label="Email" value="aorawistara@gmail.com" />
+                <SocialRow icon={<Instagram />} label="Instagram" value="@aora" />
+                <SocialRow icon={<TikTokIcon className="w-5 h-5" />} label="TikTok" value="@aora" />
+                <SocialRow icon={<Facebook />} label="Facebook" value="Aora" />
+                <SocialRow icon={<Mail />} label="Email" value="aora@gmail.com" />
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function KontakPage() {
               />
               <div className="absolute top-4 left-4 bg-white px-4 py-3 rounded-2xl shadow-xl">
                 <p className="text-[#E63946] uppercase text-xs" style={{ fontWeight: 800, letterSpacing: "0.15em" }}>Lokasi</p>
-                <p className="text-[#0A1F44]" style={{ fontWeight: 800 }}>AORA Wistara LKP</p>
+                <p className="text-[#0A1F44]" style={{ fontWeight: 800 }}>Aora LKP</p>
               </div>
             </div>
           </div>

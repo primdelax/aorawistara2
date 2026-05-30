@@ -115,7 +115,7 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
   const { settings } = useSettings()
 
   const waUrl      = buildWhatsAppUrl(settings.phone)
-  const siteName   = settings.site_name  || 'AORA Wistara'
+  const siteName   = settings.site_name  || 'Aora'
   const tagline    = settings.tagline    || 'Kami Beda Tapi Luar Biasa'
   const aboutText  = settings.about_text || ''
 
@@ -135,40 +135,23 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
 
         <div className="relative max-w-7xl mx-auto px-6 py-24 md:py-32 grid md:grid-cols-12 gap-10 items-center">
           <div className="md:col-span-7">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full mb-6 border border-white/20">
-              <img
-                src={logoAora}
-                alt="Logo AORA"
-                style={{ width: '22px', height: '22px', objectFit: 'contain', flexShrink: 0 }}
-              />
-              <span
-                style={{ fontWeight: 700, letterSpacing: '0.1em', fontSize: '12px' }}
-                className="uppercase"
-              >
-                Lembaga Khusus dan Pelatihan
-              </span>
-            </div>
             <h1
               className="text-white"
-              style={{
-                fontWeight: 900,
-                fontSize: 'clamp(48px, 8vw, 96px)',
-                lineHeight: 0.95,
-                letterSpacing: '-0.04em',
-              }}
+              style={{ lineHeight: 1, letterSpacing: '-0.03em' }}
             >
-              {siteName.split(' ').map((word, i) => (
-                i === 0
-                  ? <span key={i}>{word}<br /></span>
-                  : <span key={i} className="text-[#E63946]">{word}</span>
-              ))}
+              <span
+                className="block text-white/80"
+                style={{ fontWeight: 700, fontSize: 'clamp(16px, 2.2vw, 26px)', letterSpacing: '0.04em', textTransform: 'uppercase' }}
+              >
+                lembaga kursus
+              </span>
+              <span
+                className="block text-[#E63946]"
+                style={{ fontWeight: 900, fontSize: 'clamp(72px, 12vw, 130px)', letterSpacing: '-0.05em', lineHeight: 0.88 }}
+              >
+                {siteName}
+              </span>
             </h1>
-            <p
-              className="mt-6 text-white/90"
-              style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.5vw, 28px)' }}
-            >
-              &ldquo;{tagline}&rdquo;
-            </p>
             <p className="mt-5 text-white/70 max-w-xl">
               {aboutText ||
                 'Tempat di mana bakat tumbuh, keahlian terasah, dan masa depan dipersiapkan dengan percaya diri. Pelatihan profesional dari barista hingga seni budaya.'}
@@ -260,7 +243,7 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
           <div className="md:col-span-7">
             <p className="text-[#0A1F44]/80 text-lg leading-relaxed">
               {aboutText ||
-                'AORA Wistara adalah Lembaga Khusus dan Pelatihan (LKP) yang membentuk individu berdaya saing melalui kombinasi keterampilan praktis dan ekspresi seni. Kami percaya setiap orang punya potensi luar biasa yang perlu diberi ruang untuk berkembang.'}
+                'Aora adalah Lembaga Khusus dan Pelatihan (LKP) yang membentuk individu berdaya saing melalui kombinasi keterampilan praktis dan ekspresi seni. Kami percaya setiap orang punya potensi luar biasa yang perlu diberi ruang untuk berkembang.'}
             </p>
             <p className="text-[#0A1F44]/70 mt-4 leading-relaxed">
               Dengan pengajar berpengalaman dan kurikulum berbasis komunitas, AORA hadir sebagai

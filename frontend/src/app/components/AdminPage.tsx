@@ -55,7 +55,7 @@ export function AdminPage({ onExit }: { onExit: () => void }) {
     <div className="min-h-screen bg-[#F7F7F9] flex">
       <aside className="w-64 bg-[#0A1F44] text-white flex flex-col shrink-0 sticky top-0 h-screen">
         <div className="p-6 border-b border-white/10">
-          <div className="bg-white inline-block px-3 py-2 rounded-xl"><Logo /></div>
+          <div className="bg-white inline-block px-3 py-2 rounded-xl"><Logo className="h-10" /></div>
           <p className="mt-3 text-white/40 text-xs uppercase tracking-widest" style={{ fontWeight: 800 }}>Admin Panel</p>
         </div>
         <nav className="flex-1 p-3 overflow-y-auto">

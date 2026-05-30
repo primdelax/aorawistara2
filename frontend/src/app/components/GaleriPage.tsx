@@ -52,7 +52,7 @@ const CATEGORIES: Category[] = [
     cover: `${BASE}/personality1.jpg`,
     color: '#1E8449',
     images: [
-      { src: `${BASE}/personality1.jpg`, caption: 'Potret anggota AORA Wistara' },
+      { src: `${BASE}/personality1.jpg`, caption: 'Potret anggota Aora' },
     ],
   },
   {
@@ -231,7 +231,7 @@ export function GaleriPage() {
           </h1>
           <p className="galeri-hero-subtitle">
             Pilih kategori di bawah untuk menjelajahi momen-momen luar biasa
-            dari komunitas <strong>AORA Wistara</strong>.
+            dari komunitas <strong>Aora</strong>.
           </p>
         </div>
       </section>

@@ -26,7 +26,7 @@ export function Navbar({
   const [open] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const { settings } = useSettings()
-  const siteName = settings.site_name || 'AORA Wistara'
+  const siteName = settings.site_name || 'Aora'
 
   return (
     <header
@@ -36,10 +36,10 @@ export function Navbar({
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <button
           onClick={() => onNavigate('home')}
-          className="cursor-pointer"
+          className="cursor-pointer flex items-center"
           aria-label={`${siteName} — Kembali ke Beranda`}
         >
-          <Logo />
+          <Logo className="h-16 md:h-[72px]" />
         </button>
 
         <nav className="hidden md:flex items-center gap-1" aria-label="Navigasi utama">

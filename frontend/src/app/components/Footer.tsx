@@ -9,7 +9,7 @@ export function Footer() {
   const { settings } = useSettings()
 
   const year        = new Date().getFullYear()
-  const siteName    = settings.site_name || 'AORA Wistara'
+  const siteName    = settings.site_name || 'Aora'
   const tagline     = settings.tagline   || 'Kami Beda Tapi Luar Biasa'
   const email       = settings.email     || ''
   const address     = settings.address   || 'Indonesia'
@@ -25,7 +25,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-14 grid md:grid-cols-3 gap-10">
         <div>
           <div className="bg-white inline-block px-3 py-2 rounded-lg">
-            <Logo />
+            <Logo className="h-10" />
           </div>
           <p className="mt-4 text-white/70 max-w-sm">{tagline}</p>
         </div>

@@ -1,5 +1,5 @@
 -- ================================================
--- AORA WISTARA DATABASE SCHEMA
+-- AORA DATABASE SCHEMA
 -- Database: aora_db
 -- ================================================
 
@@ -124,7 +124,7 @@ INSERT IGNORE INTO categories (name, slug, description) VALUES
 ('Teknologi', 'teknologi', 'Program pelatihan komputer dan teknologi digital'),
 ('Kuliner', 'kuliner', 'Program pelatihan seni kuliner dan minuman'),
 ('Fashion', 'fashion', 'Program pelatihan desain dan mode'),
-('Berita', 'berita', 'Berita dan informasi terkini AORA Wistara'),
+('Berita', 'berita', 'Berita dan informasi terkini Aora'),
 ('Tips & Tutorial', 'tips-tutorial', 'Tips dan tutorial seputar kegiatan LKP');
 
 -- Admin default (password: Admin@1234)

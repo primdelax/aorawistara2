@@ -5,7 +5,7 @@ import { Logo } from '../Logo'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 
 export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
-  const [email, setEmail] = useState('admin@aorawistara.id')
+  const [email, setEmail] = useState('admin@aora.id')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -32,13 +32,13 @@ export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: (
         <div className="bg-white rounded-3xl p-10 shadow-2xl shadow-black/30">
           <div className="flex justify-center mb-8">
             <div className="bg-[#0A1F44] px-5 py-3 rounded-2xl">
-              <Logo />
+              <Logo className="h-12" />
             </div>
           </div>
           <h1 className="text-[#0A1F44] text-center mb-1" style={{ fontWeight: 900, fontSize: 26, letterSpacing: '-0.03em' }}>
             Admin Panel
           </h1>
-          <p className="text-[#0A1F44]/50 text-center text-sm mb-8">Masuk untuk mengelola website AORA Wistara</p>
+          <p className="text-[#0A1F44]/50 text-center text-sm mb-8">Masuk untuk mengelola website Aora</p>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-5">
@@ -54,7 +54,7 @@ export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: (
                 onChange={e => setEmail(e.target.value)}
                 required autoFocus
                 className="w-full bg-[#F7F7F9] px-4 py-3 rounded-xl outline-none focus:ring-2 ring-[#E63946]/40 text-[#0A1F44]"
-                placeholder="admin@aorawistara.id"
+                placeholder="admin@aora.id"
               />
             </div>
             <div>
@@ -91,7 +91,7 @@ export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: (
             </button>
           </form>
         </div>
-        <p className="text-center text-white/30 text-xs mt-6">AORA Wistara © {new Date().getFullYear()}</p>
+        <p className="text-center text-white/30 text-xs mt-6">Aora © {new Date().getFullYear()}</p>
       </div>
     </div>
   )

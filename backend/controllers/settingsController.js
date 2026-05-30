@@ -4,7 +4,7 @@ const { pool } = require('../config/database')
 const ALLOWED_KEYS = ['site_name', 'tagline', 'address', 'phone', 'email', 'instagram', 'facebook', 'youtube', 'logo_url', 'about_text']
 
 const DEFAULT_SETTINGS = {
-  site_name: 'AORA Wistara',
+  site_name: 'Aora',
   tagline: 'Lembaga Kursus & Pelatihan',
   address: '', phone: '', email: '', instagram: '', facebook: '',
   youtube: '', logo_url: null, about_text: '',
