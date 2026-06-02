@@ -1,6 +1,6 @@
 # 🚀 AORA Wistara Backend API
 
-Backend profesional untuk sistem manajemen **AORA Wistara** (LKP — Lembaga Kursus dan Pelatihan).
+Backend profesional untuk sistem manajemen **AORA Wistara** (Lembaga Kursus).
 
 ## Tech Stack
 

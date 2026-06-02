@@ -5,7 +5,7 @@ import { Logo } from '../Logo'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 
 export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
-  const [email, setEmail] = useState('admin@aora.id')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -13,14 +13,15 @@ export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: (
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!/^[A-Za-z0-9]+$/.test(username)) { setError('Username hanya boleh berisi huruf dan angka tanpa spasi.'); return }
     if (!password) { setError('Password wajib diisi.'); return }
     setError('')
     setLoading(true)
     try {
-      await authApi.login(email, password)
+      await authApi.login(username.toLowerCase(), password)
       onLogin()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login gagal. Periksa email dan password.')
+      setError(err instanceof Error ? err.message : 'Login gagal. Periksa username dan password.')
     } finally {
       setLoading(false)
     }
@@ -29,11 +30,9 @@ export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: (
   return (
     <div className="min-h-screen bg-[#0A1F44] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl p-10 shadow-2xl shadow-black/30">
+        <div className="admin-login-card bg-white rounded-3xl p-10 border-2 border-[#E63946]">
           <div className="flex justify-center mb-8">
-            <div className="bg-[#0A1F44] px-5 py-3 rounded-2xl">
-              <Logo className="h-12" />
-            </div>
+            <Logo className="h-12" />
           </div>
           <h1 className="text-[#0A1F44] text-center mb-1" style={{ fontWeight: 900, fontSize: 26, letterSpacing: '-0.03em' }}>
             Admin Panel
@@ -48,13 +47,17 @@ export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: (
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-[#0A1F44] text-xs uppercase tracking-widest block mb-2" style={{ fontWeight: 800 }}>Email</label>
+              <label className="text-[#0A1F44] text-xs uppercase tracking-widest block mb-2" style={{ fontWeight: 800 }}>Username</label>
               <input
-                type="email" value={email}
-                onChange={e => setEmail(e.target.value)}
+                type="text" value={username}
+                onChange={e => setUsername(e.target.value.replace(/[^A-Za-z0-9]/g, '').toLowerCase())}
                 required autoFocus
+                pattern="[A-Za-z0-9]+"
+                minLength={3}
+                maxLength={32}
                 className="w-full bg-[#F7F7F9] px-4 py-3 rounded-xl outline-none focus:ring-2 ring-[#E63946]/40 text-[#0A1F44]"
-                placeholder="admin@aora.id"
+                placeholder=""
+                autoComplete="off"
               />
             </div>
             <div>
@@ -66,7 +69,8 @@ export function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: (
                   onChange={e => setPassword(e.target.value)}
                   required
                   className="w-full bg-[#F7F7F9] px-4 py-3 pr-11 rounded-xl outline-none focus:ring-2 ring-[#E63946]/40 text-[#0A1F44]"
-                  placeholder="••••••••"
+                  placeholder=""
+                  autoComplete="new-password"
                 />
                 <button type="button" onClick={() => setShowPass(s => !s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0A1F44]/40 hover:text-[#0A1F44]">

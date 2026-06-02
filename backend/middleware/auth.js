@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { pool } = require("../config/database");
+const { isSupabase } = require("../config/dataProvider");
+const supabase = require("../services/supabaseService");
 const { sendUnauthorized, sendForbidden } = require("../utils/response");
 
 /**
@@ -27,11 +29,12 @@ const verifyToken = async (req, res, next) => {
       return sendUnauthorized(res, "Token tidak valid.");
     }
 
-    // Check user exists and is active
-    const [rows] = await pool.query(
-      "SELECT id, name, email, role, is_active FROM users WHERE id = ?",
-      [decoded.id]
-    );
+    const rows = isSupabase
+      ? [await supabase.findById("users", decoded.id, "id,name,username,email,role,is_active")].filter(Boolean)
+      : (await pool.query(
+          "SELECT id, name, username, email, role, is_active FROM users WHERE id = ?",
+          [decoded.id]
+        ))[0];
 
     if (rows.length === 0) {
       return sendUnauthorized(res, "User tidak ditemukan.");
@@ -79,10 +82,12 @@ const optionalAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const [rows] = await pool.query(
-      "SELECT id, name, email, role, is_active FROM users WHERE id = ?",
-      [decoded.id]
-    );
+    const rows = isSupabase
+      ? [await supabase.findById("users", decoded.id, "id,name,username,email,role,is_active")].filter(Boolean)
+      : (await pool.query(
+          "SELECT id, name, username, email, role, is_active FROM users WHERE id = ?",
+          [decoded.id]
+        ))[0];
 
     req.user = rows.length > 0 && rows[0].is_active ? rows[0] : null;
     next();

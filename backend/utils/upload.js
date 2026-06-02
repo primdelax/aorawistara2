@@ -50,6 +50,24 @@ const uploadProgram = multer({
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 },
 });
 
+const uploadHomepage = multer({
+  storage: createStorage("homepage"),
+  fileFilter: imageFilter,
+  limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 },
+});
+
+const uploadFeatured = multer({
+  storage: createStorage("featured"),
+  fileFilter: imageFilter,
+  limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 },
+});
+
+const uploadTestimonial = multer({
+  storage: createStorage("testimonials"),
+  fileFilter: imageFilter,
+  limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 },
+});
+
 const uploadArticle = multer({
   storage: createStorage("articles"),
   fileFilter: imageFilter,
@@ -79,4 +97,4 @@ const deleteFile = (filePath) => {
   }
 };
 
-module.exports = { uploadGallery, uploadProgram, uploadArticle, uploadAvatar, buildImageUrl, deleteFile };
+module.exports = { uploadGallery, uploadProgram, uploadHomepage, uploadFeatured, uploadTestimonial, uploadArticle, uploadAvatar, buildImageUrl, deleteFile };

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getAll, getOne, getBySlug, create, update, remove } = require("../controllers/programController");
+const { getAll, getOne, getBySlug, create, update, remove, toggleFeatured } = require("../controllers/programController");
 const { verifyToken, isAdmin } = require("../middleware/auth");
 const { validate } = require("../middleware/validate");
 const { programValidator, updateProgramValidator } = require("../validators/programValidator");
@@ -36,6 +36,9 @@ router.put(
   validate,
   update
 );
+
+// PATCH /api/programs/:id/featured (admin only)
+router.patch("/:id/featured", verifyToken, isAdmin, toggleFeatured);
 
 // DELETE /api/programs/:id  (admin only)
 router.delete("/:id", verifyToken, isAdmin, remove);

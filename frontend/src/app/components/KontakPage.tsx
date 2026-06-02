@@ -1,10 +1,40 @@
-import { MapPin, Mail, Phone, Instagram, Facebook, Clock } from "lucide-react";
+import type { ReactNode } from "react";
+import { MapPin, Mail, Phone, Instagram, Facebook, Clock, Youtube } from "lucide-react";
 import { WhatsAppIcon } from "./HomePage";
 import { TikTokIcon } from "./Footer";
+import { useSettings, buildWhatsAppUrl, DEFAULT_SETTINGS } from "../hooks/useSettings";
 
-const WA = "https://wa.me/6281234567890";
+const socialUrl = (platform: "instagram" | "facebook" | "youtube" | "tiktok", value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http")) return trimmed;
+
+  const clean = trimmed.replace(/^@/, "");
+  if (platform === "instagram") return `https://instagram.com/${clean}`;
+  if (platform === "facebook") return `https://facebook.com/${clean}`;
+  if (platform === "youtube") return `https://youtube.com/@${clean}`;
+  return `https://tiktok.com/@${clean}`;
+};
+
+const socialLabel = (value: string, fallback: string) => {
+  if (!value) return fallback;
+  return value
+    .replace(/^https?:\/\/(www\.)?/i, "")
+    .replace(/^(instagram|facebook|youtube|tiktok)\.com\/?/i, "")
+    .replace(/\/$/, "");
+};
 
 export function KontakPage() {
+  const { settings } = useSettings();
+
+  const phone = settings.phone || DEFAULT_SETTINGS.phone;
+  const email = settings.email || DEFAULT_SETTINGS.email;
+  const address = settings.address || DEFAULT_SETTINGS.address;
+  const hours = settings.operational_hours || DEFAULT_SETTINGS.operational_hours;
+  const mapLink = settings.maps_url || DEFAULT_SETTINGS.maps_url;
+  const mapEmbed = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+  const waUrl = buildWhatsAppUrl(phone);
+
   return (
     <div>
       <section className="bg-[#0A1F44] text-white py-20 relative overflow-hidden">
@@ -24,10 +54,9 @@ export function KontakPage() {
 
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-10">
-          {/* Info */}
           <div>
             <a
-              href={WA}
+              href={waUrl}
               target="_blank"
               rel="noreferrer"
               className="block bg-[#25D366] hover:bg-[#1ebe5a] text-white rounded-3xl p-8 transition-all hover:scale-[1.01] shadow-xl shadow-[#25D366]/20"
@@ -39,7 +68,7 @@ export function KontakPage() {
                 <div>
                   <p className="uppercase text-xs tracking-widest opacity-80" style={{ fontWeight: 800 }}>Chat Langsung</p>
                   <p style={{ fontWeight: 900, fontSize: "28px", letterSpacing: "-0.02em" }}>WhatsApp Kami</p>
-                  <p className="opacity-90">+62 812-3456-7890</p>
+                  <p className="opacity-90">{phone}</p>
                 </div>
               </div>
             </a>
@@ -49,10 +78,10 @@ export function KontakPage() {
                 Informasi Kontak
               </h3>
               <div className="mt-5 space-y-4">
-                <ContactRow icon={<MapPin />} label="Alamat" value="Jl. Pelatihan No. 1, Indonesia" />
-                <ContactRow icon={<Mail />} label="Email" value="aora@gmail.com" />
-                <ContactRow icon={<Phone />} label="Telepon" value="+62 812-3456-7890" />
-                <ContactRow icon={<Clock />} label="Jam Operasional" value="Senin – Sabtu, 08:00 – 17:00 WIB" />
+                <ContactRow icon={<MapPin />} label="Alamat" value={address} />
+                <ContactRow icon={<Mail />} label="Email" value={email} href={`mailto:${email}`} />
+                <ContactRow icon={<Phone />} label="Telepon" value={phone} href={waUrl} />
+                <ContactRow icon={<Clock />} label="Jam Operasional" value={hours} />
               </div>
             </div>
 
@@ -61,26 +90,49 @@ export function KontakPage() {
                 Sosial Media
               </h3>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <SocialRow icon={<Instagram />} label="Instagram" value="@aora" />
-                <SocialRow icon={<TikTokIcon className="w-5 h-5" />} label="TikTok" value="@aora" />
-                <SocialRow icon={<Facebook />} label="Facebook" value="Aora" />
-                <SocialRow icon={<Mail />} label="Email" value="aora@gmail.com" />
+                <SocialRow
+                  icon={<Instagram />}
+                  label="Instagram"
+                  value={socialLabel(settings.instagram, "Instagram")}
+                  href={socialUrl("instagram", settings.instagram || "")}
+                />
+                <SocialRow
+                  icon={<TikTokIcon className="w-5 h-5" />}
+                  label="TikTok"
+                  value={socialLabel(settings.tiktok, "TikTok")}
+                  href={socialUrl("tiktok", settings.tiktok || "")}
+                />
+                <SocialRow
+                  icon={<Facebook />}
+                  label="Facebook"
+                  value={socialLabel(settings.facebook, "Facebook")}
+                  href={socialUrl("facebook", settings.facebook || "")}
+                />
+                <SocialRow
+                  icon={<Youtube />}
+                  label="YouTube"
+                  value={socialLabel(settings.youtube, "YouTube")}
+                  href={socialUrl("youtube", settings.youtube || "")}
+                />
               </div>
             </div>
           </div>
 
-          {/* Map */}
           <div className="lg:sticky lg:top-28 h-fit">
             <div className="rounded-3xl overflow-hidden border-2 border-[#0A1F44]/10 bg-[#F7F7F9] aspect-[4/5] relative">
               <iframe
                 title="AORA Map"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=106.8%2C-6.21%2C106.85%2C-6.18&layer=mapnik"
+                src={mapEmbed}
                 className="w-full h-full"
                 style={{ border: 0 }}
+                loading="lazy"
               />
               <div className="absolute top-4 left-4 bg-white px-4 py-3 rounded-2xl shadow-xl">
                 <p className="text-[#E63946] uppercase text-xs" style={{ fontWeight: 800, letterSpacing: "0.15em" }}>Lokasi</p>
-                <p className="text-[#0A1F44]" style={{ fontWeight: 800 }}>Aora LKP</p>
+                <p className="text-[#0A1F44]" style={{ fontWeight: 800 }}>{address}</p>
+                <a href={mapLink} target="_blank" rel="noreferrer" className="text-[#E63946] text-xs mt-1 inline-block" style={{ fontWeight: 800 }}>
+                  Buka Google Maps
+                </a>
               </div>
             </div>
           </div>
@@ -97,7 +149,7 @@ export function KontakPage() {
             Tim kami akan membantumu memilih program yang paling sesuai. Gratis dan tanpa komitmen.
           </p>
           <a
-            href={WA}
+            href={waUrl}
             target="_blank"
             rel="noreferrer"
             className="mt-8 inline-flex items-center gap-3 bg-white text-[#0A1F44] px-8 py-4 rounded-full transition-all hover:scale-[1.02] hover:bg-[#E63946] hover:text-white shadow-xl"
@@ -111,7 +163,7 @@ export function KontakPage() {
   );
 }
 
-function ContactRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function ContactRow({ icon, label, value, href }: { icon: ReactNode; label: string; value: string; href?: string }) {
   return (
     <div className="flex items-start gap-4">
       <div className="w-10 h-10 rounded-xl bg-[#E63946] text-white flex items-center justify-center shrink-0">
@@ -119,20 +171,28 @@ function ContactRow({ icon, label, value }: { icon: React.ReactNode; label: stri
       </div>
       <div>
         <p className="text-[#0A1F44]/60 uppercase text-xs" style={{ fontWeight: 700, letterSpacing: "0.15em" }}>{label}</p>
-        <p className="text-[#0A1F44]" style={{ fontWeight: 700 }}>{value}</p>
+        {href ? (
+          <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noreferrer" : undefined} className="text-[#0A1F44] hover:text-[#E63946]" style={{ fontWeight: 700 }}>
+            {value}
+          </a>
+        ) : (
+          <p className="text-[#0A1F44]" style={{ fontWeight: 700 }}>{value}</p>
+        )}
       </div>
     </div>
   );
 }
 
-function SocialRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SocialRow({ icon, label, value, href }: { icon: ReactNode; label: string; value: string; href: string }) {
+  if (!href) return null;
+
   return (
-    <div className="flex items-center gap-3 bg-white/5 hover:bg-[#E63946] transition-colors rounded-xl px-4 py-3 cursor-pointer">
-      <div className="text-[#E63946] group-hover:text-white">{icon}</div>
+    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-white/5 hover:bg-[#E63946] transition-colors rounded-xl px-4 py-3">
+      <div className="text-[#E63946]">{icon}</div>
       <div>
         <p className="text-white/60 text-xs uppercase" style={{ fontWeight: 700, letterSpacing: "0.1em" }}>{label}</p>
         <p style={{ fontWeight: 700 }}>{value}</p>
       </div>
-    </div>
+    </a>
   );
 }

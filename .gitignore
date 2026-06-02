@@ -2,5 +2,10 @@ node_modules/
 dist/
 .env
 .env.*
+!backend/.env.supabase.example
 .DS_Store
 Thumbs.db
+frontend/.npm-cache/
+frontend/.npm-prefix/
+frontend/vite-dev*.log
+frontend/vite.local.config.mjs

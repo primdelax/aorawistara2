@@ -1,6 +1,6 @@
 // src/app/components/ProgramPage.tsx
 import { useEffect, useState } from "react";
-import { Clock, ImageOff, XCircle, Zap, GraduationCap, Calendar, ArrowRight, Check } from "lucide-react";
+import { Clock, ImageOff, Zap, GraduationCap, Calendar, ArrowRight, Check } from "lucide-react";
 import { programApi, type Program } from "../lib/api";
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -29,12 +29,12 @@ const PROGRAM_TYPES = [
     borderHover: "#E63946",
   },
   {
-    key: "bimbel",
-    label: "Program Bimbel",
+    key: "short_course",
+    label: "Short Course",
     photo: "/program-bimbel.png",
-    desc: "Bimbingan belajar terstruktur dengan pendekatan personal dan interaktif. Fokus penguatan dasar hingga mahir sesuai kecepatan belajar peserta.",
+    desc: "Kelas singkat yang fokus pada praktik kreatif dan hasil karya nyata. Cocok untuk peserta yang ingin belajar cepat lewat pengalaman langsung.",
     icon: GraduationCap,
-    features: ["Pendekatan personal", "Kelas kecil & interaktif", "Evaluasi berkala per peserta"],
+    features: ["Program Membatik", "Fotografi"],
     overlay: "linear-gradient(180deg, rgba(60,8,12,0.45) 0%, rgba(80,10,16,0.92) 55%, rgba(90,8,14,0.98) 100%)",
     accentColor: "#ff6b6b",
     accentBg: "rgba(255,107,107,0.18)",
@@ -89,12 +89,24 @@ const hoverStyles = `
 
 // ─── Program Type Card ───────────────────────────────────────
 
-function ProgramTypeCard({ pt }: { pt: typeof PROGRAM_TYPES[0] }) {
+function ProgramTypeCard({
+  pt,
+  active,
+  count,
+  onSelect,
+}: {
+  pt: typeof PROGRAM_TYPES[0]
+  active: boolean
+  count: number
+  onSelect: () => void
+}) {
   const Icon = pt.icon;
   return (
-    <div
-      className="prog-card relative rounded-3xl overflow-hidden border-2 border-white/5 flex flex-col"
-      style={{ minHeight: 480, borderColor: "rgba(255,255,255,0.07)" }}
+    <button
+      type="button"
+      onClick={onSelect}
+      className="prog-card relative rounded-3xl overflow-hidden border-2 border-white/5 flex flex-col text-left"
+      style={{ minHeight: 480, borderColor: active ? pt.borderHover : "rgba(255,255,255,0.07)" }}
     >
       {/* Background photo */}
       <div className="absolute inset-0 overflow-hidden">
@@ -133,7 +145,7 @@ function ProgramTypeCard({ pt }: { pt: typeof PROGRAM_TYPES[0] }) {
           marginBottom: 10,
           display: "block",
         }}>
-          {pt.key === "intensif" ? "⚡ Intensif" : pt.key === "bimbel" ? "🎓 Bimbel" : "📅 Reguler"}
+          {pt.key === "intensif" ? "⚡ Intensif" : pt.key === "short_course" ? "🎓 Short Course" : "📅 Reguler"}
         </span>
 
         {/* TITLE — most prominent */}
@@ -159,6 +171,17 @@ function ProgramTypeCard({ pt }: { pt: typeof PROGRAM_TYPES[0] }) {
           {pt.desc}
         </p>
 
+        <p style={{
+          color: "rgba(255,255,255,0.65)",
+          fontSize: 12,
+          fontWeight: 800,
+          marginBottom: 14,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+        }}>
+          {count} program tersedia
+        </p>
+
         {/* Features */}
         <ul className="space-y-2 mb-6">
           {pt.features.map((f) => (
@@ -177,8 +200,7 @@ function ProgramTypeCard({ pt }: { pt: typeof PROGRAM_TYPES[0] }) {
         </ul>
 
         {/* CTA — appears on hover */}
-        <a
-          href="#program-list"
+        <span
           className="prog-cta"
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
@@ -195,9 +217,9 @@ function ProgramTypeCard({ pt }: { pt: typeof PROGRAM_TYPES[0] }) {
         >
           Lihat Program
           <ArrowRight style={{ width: 15, height: 15 }} />
-        </a>
+        </span>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -239,17 +261,43 @@ function ProgramCard({ program, index }: { program: Program; index: number }) {
         <h3 className="text-[#0A1F44] mb-2" style={{ fontWeight: 900, fontSize: 18, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
           {program.title}
         </h3>
-        {program.description && (
-          <p className="text-[#0A1F44]/60 text-sm leading-relaxed line-clamp-2 flex-1">
-            {program.description}
-          </p>
-        )}
+        <div className="space-y-3 flex-1">
+          {program.description && (
+            <div>
+              <p className="text-[#E63946] text-[11px] uppercase tracking-widest mb-1" style={{ fontWeight: 900 }}>Ini program apa?</p>
+              <p className="text-[#0A1F44]/65 text-sm leading-relaxed">
+                {program.description}
+              </p>
+            </div>
+          )}
+          <div>
+            <p className="text-[#E63946] text-[11px] uppercase tracking-widest mb-1" style={{ fontWeight: 900 }}>Ngapain aja?</p>
+            <p className="text-[#0A1F44]/60 text-sm leading-relaxed">
+              Peserta belajar lewat praktik, pendampingan instruktur, dan pembuatan karya atau tugas sesuai fokus program.
+            </p>
+          </div>
+        </div>
         {program.duration && (
           <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-1.5 text-[#0A1F44]/50 text-sm">
             <Clock className="w-3.5 h-3.5 shrink-0" />
             {program.duration}
           </div>
         )}
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <p className="text-[#0A1F44] text-xs uppercase tracking-widest mb-2" style={{ fontWeight: 900 }}>Jadwal Program</p>
+          {program.schedules?.length ? (
+            <div className="space-y-2">
+              {program.schedules.map((schedule, scheduleIndex) => (
+                <div key={schedule.id ?? scheduleIndex} className="rounded-xl bg-[#F7F7F9] px-3 py-2 text-sm">
+                  <p className="text-[#0A1F44]" style={{ fontWeight: 800 }}>{schedule.day} • {schedule.time}</p>
+                  {schedule.note && <p className="text-[#0A1F44]/50 text-xs mt-0.5">{schedule.note}</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[#0A1F44]/45 text-sm">Jadwal akan segera diumumkan.</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -276,6 +324,7 @@ export function ProgramPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string>(PROGRAM_TYPES[0].key);
 
   const fetchPrograms = async () => {
     setLoading(true);
@@ -284,13 +333,15 @@ export function ProgramPage() {
       const data = await programApi.getAll({ status: "aktif" });
       setPrograms(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Gagal memuat program");
+      setError(err instanceof Error ? err.message : "Program tidak tersedia");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => { fetchPrograms(); }, []);
+
+  const visiblePrograms = programs.filter((program) => program.program_type === selectedType);
 
   return (
     <div>
@@ -314,7 +365,7 @@ export function ProgramPage() {
             Program <span className="text-[#E63946]">Kami</span>
           </h1>
           <p className="mt-5 text-white/70 max-w-2xl">
-            Pilihan pelatihan untuk membentuk keterampilan dan jati diri.
+            Pilihan pelatihan untuk membentuk lifeskill dan jati diri.
             Pilih program yang sesuai dengan passionmu dan jadilah luar biasa.
           </p>
         </div>
@@ -333,56 +384,47 @@ export function ProgramPage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PROGRAM_TYPES.map((pt) => (
-              <ProgramTypeCard key={pt.key} pt={pt} />
-            ))}
+            {PROGRAM_TYPES.map((pt) => {
+              const count = programs.filter((program) => program.program_type === pt.key).length;
+              return (
+                <ProgramTypeCard
+                  key={pt.key}
+                  pt={pt}
+                  active={selectedType === pt.key}
+                  count={count}
+                  onSelect={() => setSelectedType(pt.key)}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ── Program List from DB ── */}
-      <section id="program-list" className="py-16 bg-[#F7F7F9]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-10">
-            <p className="text-[#E63946] text-xs font-extrabold uppercase tracking-widest mb-2">Tersedia Sekarang</p>
-            <h2 className="text-[#0A1F44]" style={{ fontWeight: 900, fontSize: "clamp(24px, 3.5vw, 36px)", letterSpacing: "-0.03em" }}>
-              Semua Program Aktif
-            </h2>
+      {!error && (
+        <section id="program-list" className="py-16 bg-[#F7F7F9]">
+          <div className="max-w-7xl mx-auto px-6">
+            {loading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : visiblePrograms.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-16 h-16 rounded-full bg-[#0A1F44]/5 flex items-center justify-center mb-4">
+                  <ImageOff className="w-8 h-8 text-[#0A1F44]/30" />
+                </div>
+                <p className="text-[#0A1F44] font-black text-lg mb-2">Belum ada program</p>
+                <p className="text-[#0A1F44]/50 text-sm">Program untuk jenis ini belum tersedia. Silakan cek kembali nanti.</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {visiblePrograms.map((program, i) => (
+                  <ProgramCard key={program.id} program={program} index={i} />
+                ))}
+              </div>
+            )}
           </div>
-
-          {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                <XCircle className="w-8 h-8 text-[#E63946]" />
-              </div>
-              <p className="text-[#0A1F44] font-black text-lg mb-2">Gagal memuat program</p>
-              <p className="text-[#0A1F44]/50 text-sm mb-5">{error}</p>
-              <button onClick={fetchPrograms}
-                className="px-6 py-2.5 bg-[#E63946] text-white rounded-full text-sm font-extrabold hover:bg-[#c0303b] transition-colors">
-                Coba Lagi
-              </button>
-            </div>
-          ) : programs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#0A1F44]/5 flex items-center justify-center mb-4">
-                <ImageOff className="w-8 h-8 text-[#0A1F44]/30" />
-              </div>
-              <p className="text-[#0A1F44] font-black text-lg mb-2">Belum ada program</p>
-              <p className="text-[#0A1F44]/50 text-sm">Program pelatihan belum tersedia. Silakan cek kembali nanti.</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {programs.map((program, i) => (
-                <ProgramCard key={program.id} program={program} index={i} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

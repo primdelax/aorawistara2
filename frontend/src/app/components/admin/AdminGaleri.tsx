@@ -1,10 +1,11 @@
 // src/app/components/admin/AdminGaleri.tsx
 import { useState, useEffect, useRef } from 'react'
-import { galleryApi, type GalleryItem } from '../../lib/api'
+import { galleryApi, programApi, type GalleryItem, type Program } from '../../lib/api'
 import { Plus, Trash2, Search, X, Image as ImageIcon, RefreshCw, Check, Pencil } from 'lucide-react'
 
 export function AdminGaleri() {
   const [items, setItems] = useState<GalleryItem[]>([])
+  const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -14,7 +15,7 @@ export function AdminGaleri() {
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
   const [formError, setFormError] = useState('')
 
-  const [form, setForm] = useState({ title: '', caption: '', category: '' })
+  const [form, setForm] = useState({ title: '', caption: '', program_id: '' })
   const [imgFile, setImgFile] = useState<File | null>(null)
   const [imgPreview, setImgPreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -27,8 +28,12 @@ export function AdminGaleri() {
   const load = async () => {
     setLoading(true)
     try {
-      const data = await galleryApi.getAll({ search: search || undefined })
+      const [data, programData] = await Promise.all([
+        galleryApi.getAll({ search: search || undefined }),
+        programApi.getAll(),
+      ])
       setItems(data)
+      setPrograms(programData)
     } catch (e: unknown) {
       showToast('err', e instanceof Error ? e.message : 'Gagal memuat galeri')
     } finally { setLoading(false) }
@@ -38,25 +43,26 @@ export function AdminGaleri() {
 
   const openAdd = () => {
     setEditing(null)
-    setForm({ title: '', caption: '', category: '' })
+    setForm({ title: '', caption: '', program_id: '' })
     setImgFile(null); setImgPreview(null); setFormError(''); setShowForm(true)
   }
 
   const openEdit = (item: GalleryItem) => {
     setEditing(item)
-    setForm({ title: item.title, caption: item.caption ?? '', category: item.category ?? '' })
+    setForm({ title: item.title, caption: item.caption ?? '', program_id: item.program_id ? String(item.program_id) : '' })
     setImgFile(null); setImgPreview(item.image_url); setFormError(''); setShowForm(true)
   }
 
   const handleSave = async () => {
     if (!form.title.trim()) { setFormError('Judul wajib diisi.'); return }
+    if (!form.program_id) { setFormError('Program wajib dipilih.'); return }
     if (!editing && !imgFile) { setFormError('Foto wajib diupload.'); return }
     setSaving(true); setFormError('')
     try {
       const fd = new FormData()
       fd.append('title', form.title)
       fd.append('caption', form.caption)
-      if (form.category) fd.append('category', form.category)
+      fd.append('program_id', form.program_id)
       if (imgFile) fd.append('image', imgFile)
 
       if (editing) { await galleryApi.update(editing.id, fd); showToast('ok', 'Foto berhasil diperbarui!') }
@@ -164,16 +170,15 @@ export function AdminGaleri() {
                   className="w-full bg-[#F7F7F9] px-4 py-3 rounded-xl outline-none focus:ring-2 ring-[#E63946]/40 resize-none text-sm" />
               </div>
               <div>
-                <label className="text-[#0A1F44]/60 text-xs uppercase tracking-widest block mb-2" style={{ fontWeight: 800 }}>Kategori</label>
-                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                <label className="text-[#0A1F44]/60 text-xs uppercase tracking-widest block mb-2" style={{ fontWeight: 800 }}>Program *</label>
+                <select value={form.program_id} onChange={e => setForm(f => ({ ...f, program_id: e.target.value }))}
                   className="w-full bg-[#F7F7F9] px-4 py-3 rounded-xl outline-none text-sm">
-                  <option value="">-- Pilih Kategori --</option>
-                  <option value="seni-budaya">Seni & Budaya</option>
-                  <option value="teknologi">Teknologi</option>
-                  <option value="kuliner">Kuliner</option>
-                  <option value="fashion">Fashion</option>
-                  <option value="kegiatan">Kegiatan</option>
+                  <option value="">-- Pilih Program --</option>
+                  {programs.map(program => (
+                    <option key={program.id} value={program.id}>{program.title}</option>
+                  ))}
                 </select>
+                {programs.length === 0 && <p className="text-[#E63946] text-xs mt-1.5">Tambahkan program terlebih dahulu di menu Program.</p>}
               </div>
             </div>
             <div className="p-6 border-t border-[#0A1F44]/5 flex justify-end gap-3">
@@ -225,6 +230,7 @@ export function AdminGaleri() {
               </div>
               <div className="p-3">
                 <p className="text-[#0A1F44] text-sm truncate" style={{ fontWeight: 800 }}>{item.title}</p>
+                <p className="text-[#E63946] text-xs truncate mt-0.5" style={{ fontWeight: 800 }}>{item.program_title || item.category || 'Tanpa program'}</p>
                 {item.caption && <p className="text-[#0A1F44]/40 text-xs truncate mt-0.5">{item.caption}</p>}
               </div>
               <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">

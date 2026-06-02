@@ -1,24 +1,43 @@
 // src/app/components/Footer.tsx
-// ✅ email, address, instagram, facebook, youtube dari settings API
 
 import { Logo } from './Logo'
-import { Instagram, Facebook, Mail, MapPin } from 'lucide-react'
-import { useSettings, buildWhatsAppUrl } from '../hooks/useSettings'
+import { Instagram, Facebook, Mail, MapPin, Youtube, Phone, MessageCircle } from 'lucide-react'
+import { useSettings, buildWhatsAppUrl, DEFAULT_SETTINGS } from '../hooks/useSettings'
+
+const socialUrl = (platform: 'instagram' | 'facebook' | 'youtube' | 'tiktok', value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (trimmed.startsWith('http')) return trimmed
+
+  const clean = trimmed.replace(/^@/, '')
+  if (platform === 'instagram') return `https://instagram.com/${clean}`
+  if (platform === 'facebook') return `https://facebook.com/${clean}`
+  if (platform === 'youtube') return `https://youtube.com/${clean.startsWith('@') ? clean : `@${clean}`}`
+  return `https://tiktok.com/@${clean}`
+}
+
+const socialLabel = (value: string) => {
+  return value
+    .replace(/^https?:\/\/(www\.)?/i, '')
+    .replace(/^(instagram|facebook|youtube|tiktok)\.com\/?/i, '')
+    .replace(/\/$/, '')
+}
 
 export function Footer() {
   const { settings } = useSettings()
 
-  const year        = new Date().getFullYear()
-  const siteName    = settings.site_name || 'Aora'
-  const tagline     = settings.tagline   || 'Kami Beda Tapi Luar Biasa'
-  const email       = settings.email     || ''
-  const address     = settings.address   || 'Indonesia'
-  const instagram   = settings.instagram || ''
-  const facebook    = settings.facebook  || ''
+  const year = new Date().getFullYear()
+  const siteName = settings.site_name || DEFAULT_SETTINGS.site_name
+  const tagline = settings.tagline || DEFAULT_SETTINGS.tagline
+  const email = settings.email || DEFAULT_SETTINGS.email
+  const address = settings.address || DEFAULT_SETTINGS.address
+  const phone = settings.phone || DEFAULT_SETTINGS.phone
+  const instagram = settings.instagram || ''
+  const facebook = settings.facebook || ''
+  const youtube = settings.youtube || ''
+  const tiktok = settings.tiktok || ''
 
-  // Derive display name from URL or raw value
-  const igHandle  = instagram  ? instagram.replace(/https?:\/\/(www\.)?instagram\.com\/?/, '@').replace(/\/$/, '') : ''
-  const fbHandle  = facebook   ? facebook.replace(/https?:\/\/(www\.)?facebook\.com\/?/, '')  .replace(/\/$/, '') : ''
+  const waUrl = buildWhatsAppUrl(phone)
 
   return (
     <footer className="bg-[#0A1F44] text-white">
@@ -37,7 +56,15 @@ export function Footer() {
           >
             Hubungi
           </h4>
-          <div className="space-y-2 text-white/80">
+          <div className="space-y-3 text-white/80">
+            {phone && (
+              <p className="flex items-center gap-2">
+                <Phone className="w-4 h-4 flex-shrink-0" />
+                <a href={waUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+                  {phone}
+                </a>
+              </p>
+            )}
             {email && (
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4 flex-shrink-0" />
@@ -62,44 +89,36 @@ export function Footer() {
           >
             Sosial Media
           </h4>
-          <div className="space-y-2 text-white/80">
-            {instagram && (
-              <p className="flex items-center gap-2">
-                <Instagram className="w-4 h-4" />
-                <a
-                  href={instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  {igHandle || instagram}
-                </a>
-              </p>
-            )}
-            {facebook && (
-              <p className="flex items-center gap-2">
-                <Facebook className="w-4 h-4" />
-                <a
-                  href={facebook.startsWith('http') ? facebook : `https://facebook.com/${facebook}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  {fbHandle || facebook}
-                </a>
-              </p>
-            )}
+          <div className="space-y-3 text-white/80">
+            <SocialLink icon={<Instagram className="w-4 h-4" />} href={socialUrl('instagram', instagram)} label={socialLabel(instagram)} />
+            <SocialLink icon={<Facebook className="w-4 h-4" />} href={socialUrl('facebook', facebook)} label={socialLabel(facebook)} />
+            <SocialLink icon={<Youtube className="w-4 h-4" />} href={socialUrl('youtube', youtube)} label={socialLabel(youtube)} />
+            <SocialLink icon={<TikTokIcon className="w-4 h-4" />} href={socialUrl('tiktok', tiktok)} label={socialLabel(tiktok)} />
+            <SocialLink icon={<MessageCircle className="w-4 h-4" />} href={waUrl} label="WhatsApp" />
           </div>
         </div>
       </div>
 
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-5 text-white/50 text-sm flex justify-between flex-wrap gap-2">
-          <span>© {year} {siteName} — LKP</span>
+          <span>Copyright {year} {siteName} - LKP</span>
           <span>{tagline}</span>
         </div>
       </div>
     </footer>
+  )
+}
+
+function SocialLink({ icon, href, label }: { icon: React.ReactNode; href: string; label: string }) {
+  if (!href || !label) return null
+
+  return (
+    <p className="flex items-center gap-2">
+      {icon}
+      <a href={href} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+        {label}
+      </a>
+    </p>
   )
 }
 

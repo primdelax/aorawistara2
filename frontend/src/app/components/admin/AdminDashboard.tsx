@@ -1,7 +1,7 @@
 // src/app/components/admin/AdminDashboard.tsx
 import { useState, useEffect } from 'react'
 import { programApi, galleryApi } from '../../lib/api'
-import { BookOpen, Image as ImageIcon, TrendingUp, RefreshCw, BookMarked, Settings } from 'lucide-react'
+import { BookOpen, Image as ImageIcon, TrendingUp, RefreshCw, BookMarked, Settings, MessageSquareQuote } from 'lucide-react'
 
 export function AdminDashboard() {
   const [totalPrograms, setTotalPrograms] = useState(0)
@@ -69,6 +69,9 @@ export function AdminDashboard() {
           <div className="space-y-3">
             {[
               { icon: <BookMarked className="w-4 h-4" />, title: 'Program', desc: 'Tambah, edit, dan hapus program pelatihan yang tampil di website' },
+              { icon: <ImageIcon className="w-4 h-4" />, title: 'Foto Homepage', desc: 'Kelola foto animasi yang tampil di halaman Home' },
+              { icon: <TrendingUp className="w-4 h-4" />, title: 'Program Unggulan', desc: 'Kelola kartu program unggulan yang tampil di Home' },
+              { icon: <MessageSquareQuote className="w-4 h-4" />, title: 'Testimoni', desc: 'Kelola foto dan komentar alumni yang tampil di Home' },
               { icon: <ImageIcon className="w-4 h-4" />, title: 'Galeri', desc: 'Upload, edit, dan hapus foto untuk halaman galeri publik' },
               { icon: <Settings className="w-4 h-4" />, title: 'Pengaturan', desc: 'Ubah nama website, kontak, alamat, dan link media sosial' },
             ].map((item, i) => (

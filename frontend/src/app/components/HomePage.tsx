@@ -1,9 +1,10 @@
 // src/app/components/HomePage.tsx
 // ✅ WA link, site_name, tagline, about_text diambil dari settings API
 
-import { ArrowRight, Coffee, Music, Palette, Sparkles, Star } from 'lucide-react'
+import { ArrowRight, MessageSquareQuote, Sparkles, Star } from 'lucide-react'
 import { ImageWithFallback } from './figma/ImageWithFallback'
-import { useSettings, buildWhatsAppUrl } from '../hooks/useSettings'
+import { useSettings, buildWhatsAppUrl, DEFAULT_SETTINGS } from '../hooks/useSettings'
+import { homepagePhotoApi, programApi, testimonialApi, type Program, type Testimonial } from '../lib/api'
 import { useEffect, useRef, useState } from 'react'
 import logoAora from '../../images/LOGO AORA POLOS.png'
 
@@ -24,14 +25,23 @@ const GALLERY_IMAGES = [
 ]
 
 // ── Slideshow Component ────────────────────────────────────────────────────
-function HeroSlideshow() {
+function HeroSlideshow({ images }: { images: string[] }) {
   const [current, setCurrent] = useState(0)
   const [animClass, setAnimClass] = useState('')
   const throwDirRef = useRef<'right' | 'left'>('right')
 
-  const nextIndex = (current + 1) % GALLERY_IMAGES.length
+  const hasSlides = images.length > 0
+  const slides = hasSlides ? images : ['']
+  const safeCurrent = hasSlides ? current % slides.length : 0
+  const nextIndex = hasSlides ? (safeCurrent + 1) % slides.length : 0
 
   useEffect(() => {
+    setCurrent(0)
+  }, [images])
+
+  useEffect(() => {
+    if (!hasSlides) return
+
     const timer = setTimeout(() => {
       // Alternate direction
       const nextDir = throwDirRef.current === 'right' ? 'left' : 'right'
@@ -48,7 +58,15 @@ function HeroSlideshow() {
     }, 3000)
 
     return () => clearTimeout(timer)
-  }, [current, nextIndex])
+  }, [hasSlides, safeCurrent, nextIndex])
+
+  if (!hasSlides) {
+    return (
+      <div className="absolute inset-4 rounded-3xl overflow-hidden bg-[#0A1F44] flex items-center justify-center text-white/40 text-sm" style={{ fontWeight: 800 }}>
+        Foto homepage belum tersedia
+      </div>
+    )
+  }
 
   return (
     <div className="absolute inset-4 rounded-3xl overflow-hidden bg-[#0A1F44]">
@@ -67,7 +85,7 @@ function HeroSlideshow() {
       
       {/* Background (Next) Image */}
       <img
-        src={GALLERY_IMAGES[nextIndex]}
+        src={slides[nextIndex]}
         alt="Next Slide"
         className="w-full h-full object-cover"
         style={{ position: 'absolute', inset: 0, zIndex: 1 }}
@@ -76,8 +94,8 @@ function HeroSlideshow() {
       {/* Foreground (Current) Image (does the throwing) */}
       <img
         key={current}
-        src={GALLERY_IMAGES[current]}
-        alt={`Gallery ${current + 1}`}
+        src={slides[safeCurrent]}
+        alt={`Gallery ${safeCurrent + 1}`}
         className={`w-full h-full object-cover ${animClass}`}
         style={{ position: 'absolute', inset: 0, zIndex: 2 }}
       />
@@ -94,14 +112,14 @@ function HeroSlideshow() {
           zIndex: 10,
         }}
       >
-        {GALLERY_IMAGES.map((_, i) => (
+        {slides.map((_, i) => (
           <div
             key={i}
             style={{
-              width: i === current ? '20px' : '6px',
+              width: i === safeCurrent ? '20px' : '6px',
               height: '6px',
               borderRadius: '3px',
-              background: i === current ? '#E63946' : 'rgba(255,255,255,0.5)',
+              background: i === safeCurrent ? '#E63946' : 'rgba(255,255,255,0.5)',
               transition: 'all 0.3s ease',
             }}
           />
@@ -113,11 +131,44 @@ function HeroSlideshow() {
 
 export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
   const { settings } = useSettings()
+  const [homepageImages, setHomepageImages] = useState<string[]>(GALLERY_IMAGES)
+  const [featuredPrograms, setFeaturedPrograms] = useState<Program[]>([])
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [activeProgramCount, setActiveProgramCount] = useState(0)
 
-  const waUrl      = buildWhatsAppUrl(settings.phone)
+  const waUrl      = buildWhatsAppUrl(settings.phone || DEFAULT_SETTINGS.phone)
   const siteName   = settings.site_name  || 'Aora'
   const tagline    = settings.tagline    || 'Kami Beda Tapi Luar Biasa'
   const aboutText  = settings.about_text || ''
+
+  useEffect(() => {
+    let alive = true
+
+    const loadHomeData = async () => {
+      try {
+        const [photos, allPrograms, testimonialsData] = await Promise.all([
+          homepagePhotoApi.getAll({ status: 'aktif' }),
+          programApi.getAll({ status: 'aktif' }),
+          testimonialApi.getAll({ status: 'aktif' }),
+        ])
+
+        if (!alive) return
+        setHomepageImages(photos.length ? photos.map(photo => photo.image_url) : [])
+        setFeaturedPrograms(allPrograms.filter(p => p.is_featured))
+        setTestimonials(testimonialsData)
+        setActiveProgramCount(allPrograms.length)
+      } catch {
+        if (!alive) return
+        setHomepageImages(GALLERY_IMAGES)
+        setFeaturedPrograms([])
+        setTestimonials([])
+        setActiveProgramCount(0)
+      }
+    }
+
+    loadHomeData()
+    return () => { alive = false }
+  }, [])
 
   return (
     <div>
@@ -180,9 +231,9 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
             <div className="relative aspect-square">
               <div className="absolute inset-0 bg-[#E63946] rounded-3xl rotate-6" />
               <div className="absolute inset-0 bg-white/10 backdrop-blur rounded-3xl -rotate-3 border border-white/20" />
-              <HeroSlideshow />
+              <HeroSlideshow images={homepageImages} />
               <div className="absolute -bottom-6 -left-6 bg-white text-[#0A1F44] px-5 py-4 rounded-2xl shadow-xl z-10">
-                <div style={{ fontWeight: 900, fontSize: '32px', lineHeight: 1 }}>9+</div>
+                <div style={{ fontWeight: 900, fontSize: '32px', lineHeight: 1 }}>{activeProgramCount}</div>
                 <div className="text-xs uppercase tracking-wider" style={{ fontWeight: 700 }}>
                   Program Aktif
                 </div>
@@ -243,7 +294,7 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
           <div className="md:col-span-7">
             <p className="text-[#0A1F44]/80 text-lg leading-relaxed">
               {aboutText ||
-                'Aora adalah Lembaga Khusus dan Pelatihan (LKP) yang membentuk individu berdaya saing melalui kombinasi keterampilan praktis dan ekspresi seni. Kami percaya setiap orang punya potensi luar biasa yang perlu diberi ruang untuk berkembang.'}
+                'Aora adalah Lembaga Kursus yang membentuk individu berdaya saing melalui kombinasi lifeskill praktis dan ekspresi seni. Kami percaya setiap orang punya potensi luar biasa yang perlu diberi ruang untuk berkembang.'}
             </p>
             <p className="text-[#0A1F44]/70 mt-4 leading-relaxed">
               Dengan pengajar berpengalaman dan kurikulum berbasis komunitas, AORA hadir sebagai
@@ -291,29 +342,55 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
               Lihat Semua <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <ProgramCard
-              icon={<Coffee className="w-7 h-7" />}
-              title="Pelatihan Barista"
-              desc="Latte art, espresso, manual brew. Standar profesional kafe modern."
-              img="https://images.unsplash.com/photo-1637029567716-6c6775c341e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-            />
-            <ProgramCard
-              icon={<Music className="w-7 h-7" />}
-              title="Seni Menari"
-              desc="Tradisional dan kontemporer. Bangun ekspresi dan percaya diri di panggung."
-              img="https://images.unsplash.com/photo-1666902715814-691194b2f45f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-              accent
-            />
-            <ProgramCard
-              icon={<Palette className="w-7 h-7" />}
-              title="Batik"
-              desc="Membatik dari pola hingga pewarnaan. Lestarikan warisan budaya."
-              img="https://images.unsplash.com/photo-1604973104381-870c92f10343?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-            />
-          </div>
+          {featuredPrograms.length > 0 && (
+            <div className="grid md:grid-cols-3 gap-6">
+              {featuredPrograms.map((program, index) => (
+                <ProgramCard
+                  key={program.id}
+                  title={program.title}
+                  desc={program.description}
+                  img={program.image_url ?? ''}
+                  accent={index % 2 === 0}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
+
+      {/* Testimoni */}
+      {testimonials.length > 0 && (
+        <section className="py-24 bg-white overflow-hidden">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-14">
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1 bg-[#E63946]/10 text-[#E63946] rounded-full uppercase text-xs"
+                style={{ fontWeight: 800, letterSpacing: '0.15em' }}
+              >
+                <MessageSquareQuote className="w-4 h-4" />
+                Alumni Aora
+              </span>
+              <h2
+                className="mt-4 text-[#0A1F44]"
+                style={{
+                  fontWeight: 900,
+                  fontSize: 'clamp(36px, 5vw, 56px)',
+                  lineHeight: 1,
+                  letterSpacing: '-0.03em',
+                }}
+              >
+                Apa Kata Mereka
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-5">
+              {testimonials.slice(0, 10).map((item) => (
+                <TestimonialCard key={item.id} item={item} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="bg-[#0A1F44] text-white py-20 relative overflow-hidden">
@@ -351,13 +428,11 @@ export function HomePage({ onNavigate }: { onNavigate: (p: any) => void }) {
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function ProgramCard({
-  icon,
   title,
   desc,
   img,
   accent,
 }: {
-  icon: React.ReactNode
   title: string
   desc: string
   img: string
@@ -384,13 +459,42 @@ function ProgramCard({
             accent ? 'bg-[#E63946] text-white' : 'bg-[#0A1F44] text-white'
           }`}
         >
-          {icon}
+          <Sparkles className="w-7 h-7" />
         </div>
         <h3 style={{ fontWeight: 900, fontSize: '22px', letterSpacing: '-0.02em' }}>
           {title}
         </h3>
         <p className={`mt-2 ${accent ? 'text-white/70' : 'text-[#0A1F44]/70'}`}>{desc}</p>
       </div>
+    </div>
+  )
+}
+
+function TestimonialCard({ item }: { item: Testimonial }) {
+  return (
+    <div className="group relative rounded-3xl bg-[#F7F7F9] border border-[#0A1F44]/5 px-5 pt-8 pb-6 text-center overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#0A1F44]/10 hover:border-[#E63946]/40">
+      <div className="pointer-events-none absolute inset-y-0 -left-2/3 w-1/2 bg-white/70 skew-x-[-20deg] opacity-0 group-hover:opacity-100 group-hover:translate-x-[360%] transition-all duration-700" />
+      <div className="absolute left-1/2 top-5 -translate-x-1/2 -translate-y-3 rounded-full bg-[#0A1F44] text-white px-3 py-1 text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 group-hover:-translate-y-5 transition-all duration-300 z-10" style={{ fontWeight: 800 }}>
+        Alumni
+      </div>
+
+      <div className="relative mx-auto w-24 h-24 rounded-full p-1 bg-white shadow-lg shadow-[#0A1F44]/10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-[#E63946]/25">
+        <ImageWithFallback
+          src={item.image_url}
+          alt={item.alumni_name}
+          className="w-full h-full rounded-full object-cover"
+        />
+      </div>
+
+      <h3 className="mt-5 text-[#0A1F44]" style={{ fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em' }}>
+        {item.alumni_name}
+      </h3>
+      <p className="mt-1 text-[#E63946] text-xs uppercase tracking-wider" style={{ fontWeight: 800 }}>
+        {item.profile}
+      </p>
+      <p className="mt-4 text-[#0A1F44]/65 text-sm leading-relaxed">
+        "{item.comment}"
+      </p>
     </div>
   )
 }

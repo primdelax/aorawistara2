@@ -8,6 +8,9 @@ const rateLimit = require("express-rate-limit");
 const path = require("path");
 
 const { connectDB } = require("./config/database");
+const { ensureDatabaseSchema } = require("./config/migrations");
+const { isSupabase } = require("./config/dataProvider");
+const supabaseService = require("./services/supabaseService");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
 
 // Route imports
@@ -18,6 +21,9 @@ const articleRoutes = require("./routes/articleRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const settingsRoutes = require("./routes/settingsRoutes"); // ✅ TAMBAHAN
+const homepagePhotoRoutes = require("./routes/homepagePhotoRoutes");
+const featuredProgramRoutes = require("./routes/featuredProgramRoutes");
+const testimonialRoutes = require("./routes/testimonialRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -136,6 +142,9 @@ app.use("/api/articles", articleRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/settings", settingsRoutes); // ✅ TAMBAHAN
+app.use("/api/homepage-photos", homepagePhotoRoutes);
+app.use("/api/featured-programs", featuredProgramRoutes);
+app.use("/api/testimonials", testimonialRoutes);
 
 // ================================================
 // ERROR HANDLING
@@ -147,7 +156,12 @@ app.use(errorHandler);
 // START SERVER
 // ================================================
 const startServer = async () => {
-  await connectDB();
+  if (isSupabase) {
+    await supabaseService.ensureReady();
+  } else {
+    await connectDB();
+    await ensureDatabaseSchema();
+  }
   app.listen(PORT, () => {
     console.log("\n");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -155,7 +169,7 @@ const startServer = async () => {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log(`  🌐 URL      : http://localhost:${PORT}`);
     console.log(`  📦 ENV      : ${process.env.NODE_ENV}`);
-    console.log(`  🗄️  Database : ${process.env.DB_NAME}`);
+    console.log(`  🗄️  Database : ${isSupabase ? "Supabase online" : process.env.DB_NAME}`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
   });
 };

@@ -20,11 +20,11 @@ const registerValidator = [
 ];
 
 const loginValidator = [
-  body("email")
+  body("username")
     .trim()
-    .notEmpty().withMessage("Email wajib diisi.")
-    .isEmail().withMessage("Format email tidak valid.")
-    .normalizeEmail(),
+    .notEmpty().withMessage("Username wajib diisi.")
+    .matches(/^[A-Za-z0-9]+$/).withMessage("Username hanya boleh berisi huruf dan angka tanpa spasi.")
+    .isLength({ min: 3, max: 32 }).withMessage("Username harus antara 3-32 karakter."),
 
   body("password")
     .notEmpty().withMessage("Password wajib diisi."),

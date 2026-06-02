@@ -17,7 +17,15 @@ export function getStoredUser(): AdminUser | null {
 }
 function setStoredUser(u: object) { localStorage.setItem('aora_user', JSON.stringify(u)) }
 
-export interface AdminUser { id: number; name: string; email: string; role: string }
+export interface AdminUser {
+  id: number
+  name: string
+  username: string
+  email?: string
+  role: string
+  is_active?: boolean
+  created_at?: string
+}
 
 async function request<T>(
   method: string, path: string,
@@ -69,8 +77,8 @@ async function request<T>(
 
 // ─── Auth ────────────────────────────────────────────────────
 export const authApi = {
-  async login(email: string, password: string) {
-    const data = await request<{ data: { token: string; user: AdminUser } }>('POST', '/auth/login', { email, password })
+  async login(username: string, password: string) {
+    const data = await request<{ data: { token: string; user: AdminUser } }>('POST', '/auth/login', { username, password })
     setToken(data.data.token)
     setStoredUser(data.data.user)
     return data.data
@@ -87,15 +95,43 @@ export const authApi = {
 export interface Program {
   id: number; title: string; slug: string; description: string
   duration: string | null; price: number; image_url: string | null
+  program_type: 'intensif' | 'short_course' | 'reguler'
   status: 'aktif' | 'tidak_aktif'; category_id: number | null
   category_name: string | null; created_at: string
+  is_featured: boolean
+  schedules: ProgramSchedule[]
+}
+
+export const adminUserApi = {
+  async getAll() {
+    const res = await request<{ data: AdminUser[] }>('GET', '/dashboard/users')
+    return res.data
+  },
+  async create(data: { name: string; username: string; password: string }) {
+    return request<{ data: AdminUser }>('POST', '/dashboard/users', data)
+  },
+  async update(id: number, data: { name?: string; username?: string; password?: string; is_active?: boolean }) {
+    return request<{ data: AdminUser }>('PUT', `/dashboard/users/${id}`, data)
+  },
+  async remove(id: number) {
+    return request('DELETE', `/dashboard/users/${id}`)
+  },
+}
+
+export interface ProgramSchedule {
+  id?: number
+  day: string
+  time: string
+  note: string | null
+  sort_order?: number
 }
 
 export const programApi = {
-  async getAll(p?: { search?: string; status?: string }) {
+  async getAll(p?: { search?: string; status?: string; program_type?: string }) {
     const q = new URLSearchParams()
     if (p?.search) q.set('search', p.search)
     if (p?.status) q.set('status', p.status)
+    if (p?.program_type) q.set('program_type', p.program_type)
     q.set('limit', '100')
     const res = await request<{ data: Program[] }>('GET', `/programs?${q}`)
     return res.data
@@ -103,19 +139,22 @@ export const programApi = {
   async create(fd: FormData) { return request<{ data: Program }>('POST', '/programs', fd, true) },
   async update(id: number, fd: FormData) { return request<{ data: Program }>('PUT', `/programs/${id}`, fd, true) },
   async remove(id: number) { return request('DELETE', `/programs/${id}`) },
+  async toggleFeatured(id: number, isFeatured: boolean) { return request<{ data: Program }>('PATCH', `/programs/${id}/featured`, { is_featured: isFeatured }) },
 }
 
 // ─── Gallery ────────────────────────────────────────────────
 export interface GalleryItem {
   id: number; title: string; image_url: string
   caption: string | null; category: string | null
+  program_id: number | null
   program_title: string | null; created_at: string
 }
 
 export const galleryApi = {
-  async getAll(p?: { search?: string }) {
+  async getAll(p?: { search?: string; program_id?: number | string }) {
     const q = new URLSearchParams()
     if (p?.search) q.set('search', p.search)
+    if (p?.program_id) q.set('program_id', String(p.program_id))
     q.set('limit', '100')
     const res = await request<{ data: GalleryItem[] }>('GET', `/galleries?${q}`)
     return res.data
@@ -126,10 +165,90 @@ export const galleryApi = {
 }
 
 // ─── Settings ───────────────────────────────────────────────
+// Homepage photos
+export interface HomepagePhoto {
+  id: number
+  title: string
+  image_path: string
+  image_url: string
+  status: 'aktif' | 'tidak_aktif'
+  sort_order: number
+  created_at: string
+}
+
+export const homepagePhotoApi = {
+  async getAll(p?: { search?: string; status?: string }) {
+    const q = new URLSearchParams()
+    if (p?.search) q.set('search', p.search)
+    if (p?.status) q.set('status', p.status)
+    const res = await request<{ data: HomepagePhoto[] }>('GET', `/homepage-photos?${q}`)
+    return res.data
+  },
+  async create(fd: FormData) { return request<{ data: HomepagePhoto }>('POST', '/homepage-photos', fd, true) },
+  async update(id: number, fd: FormData) { return request<{ data: HomepagePhoto }>('PUT', `/homepage-photos/${id}`, fd, true) },
+  async remove(id: number) { return request('DELETE', `/homepage-photos/${id}`) },
+}
+
+// Featured programs
+export interface FeaturedProgram {
+  id: number
+  title: string
+  description: string
+  image_path: string
+  image_url: string
+  accent: boolean
+  status: 'aktif' | 'tidak_aktif'
+  sort_order: number
+  created_at: string
+}
+
+export const featuredProgramApi = {
+  async getAll(p?: { search?: string; status?: string }) {
+    const q = new URLSearchParams()
+    if (p?.search) q.set('search', p.search)
+    if (p?.status) q.set('status', p.status)
+    const res = await request<{ data: FeaturedProgram[] }>('GET', `/featured-programs?${q}`)
+    return res.data
+  },
+  async create(fd: FormData) { return request<{ data: FeaturedProgram }>('POST', '/featured-programs', fd, true) },
+  async update(id: number, fd: FormData) { return request<{ data: FeaturedProgram }>('PUT', `/featured-programs/${id}`, fd, true) },
+  async remove(id: number) { return request('DELETE', `/featured-programs/${id}`) },
+}
+
+// Testimonials
+export interface Testimonial {
+  id: number
+  alumni_name: string
+  profile: string
+  comment: string
+  image_path: string
+  image_url: string
+  status: 'aktif' | 'tidak_aktif'
+  sort_order: number
+  created_at: string
+}
+
+export const testimonialApi = {
+  async getAll(p?: { search?: string; status?: string }) {
+    const q = new URLSearchParams()
+    if (p?.search) q.set('search', p.search)
+    if (p?.status) q.set('status', p.status)
+    const res = await request<{ data: Testimonial[] }>('GET', `/testimonials?${q}`)
+    return res.data
+  },
+  async create(fd: FormData) { return request<{ data: Testimonial }>('POST', '/testimonials', fd, true) },
+  async update(id: number, fd: FormData) { return request<{ data: Testimonial }>('PUT', `/testimonials/${id}`, fd, true) },
+  async remove(id: number) { return request('DELETE', `/testimonials/${id}`) },
+}
+
 export interface SiteSettings {
   site_name: string; tagline: string; address: string; phone: string
-  email: string; instagram: string; facebook: string; youtube: string
+  email: string; instagram: string; facebook: string; youtube: string; tiktok: string
+  maps_url: string; operational_hours: string
   logo_url: string | null; about_text: string
+  desc_intensif?: string
+  desc_short_course?: string
+  desc_reguler?: string
 }
 
 export const settingsApi = {

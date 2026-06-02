@@ -1,4 +1,6 @@
 const { pool } = require("../config/database");
+const { isSupabase } = require("../config/dataProvider");
+const supabase = require("../services/supabaseService");
 const { sendSuccess, sendCreated, sendPaginated, sendError, sendNotFound } = require("../utils/response");
 const { generateSlug, getPagination, buildPaginationMeta } = require("../utils/helpers");
 const { buildImageUrl, deleteFile } = require("../utils/upload");
@@ -10,6 +12,25 @@ const getAll = async (req, res, next) => {
   try {
     const { page, limit, offset } = getPagination(req.query.page, req.query.limit);
     const { status, category_id, author_id, search } = req.query;
+
+    if (isSupabase) {
+      const filters = { category_id, author_id };
+      if (!req.user || req.user.role !== "admin") filters.status = "published";
+      else if (status) filters.status = status;
+
+      const rows = await supabase.list("articles", {
+        filters,
+        search: search ? { term: search, fields: ["title", "excerpt"] } : undefined,
+        order: "created_at.desc",
+        limit,
+        offset,
+      });
+      const data = rows.map((r) => ({
+        ...r,
+        cover_image_url: r.cover_image || null,
+      }));
+      return sendPaginated(res, "Data artikel berhasil diambil.", data, buildPaginationMeta(data.length, page, limit));
+    }
 
     let whereClause = "WHERE 1=1";
     const params = [];
@@ -69,6 +90,13 @@ const getAll = async (req, res, next) => {
  */
 const getOne = async (req, res, next) => {
   try {
+    if (isSupabase) {
+      const row = await supabase.findById("articles", req.params.id);
+      if (!row) return sendNotFound(res, "Artikel tidak ditemukan.");
+      await supabase.update("articles", req.params.id, { views: Number(row.views || 0) + 1 });
+      return sendSuccess(res, "Detail artikel berhasil diambil.", { ...row, cover_image_url: row.cover_image || null });
+    }
+
     const [rows] = await pool.query(
       `SELECT a.*, c.name as category_name, u.name as author_name
        FROM articles a
@@ -97,6 +125,13 @@ const getOne = async (req, res, next) => {
  */
 const getBySlug = async (req, res, next) => {
   try {
+    if (isSupabase) {
+      const row = await supabase.findOne("articles", { slug: req.params.slug });
+      if (!row) return sendNotFound(res, "Artikel tidak ditemukan.");
+      await supabase.update("articles", row.id, { views: Number(row.views || 0) + 1 });
+      return sendSuccess(res, "Detail artikel berhasil diambil.", { ...row, cover_image_url: row.cover_image || null });
+    }
+
     const [rows] = await pool.query(
       `SELECT a.*, c.name as category_name, u.name as author_name
        FROM articles a
@@ -129,10 +164,25 @@ const create = async (req, res, next) => {
 
     let coverImage = null;
     if (req.file) {
-      coverImage = `uploads/articles/${req.file.filename}`;
+      coverImage = isSupabase ? await supabase.uploadFile(req.file, "articles") : `uploads/articles/${req.file.filename}`;
     }
 
     const publishedAt = status === "published" ? new Date() : null;
+
+    if (isSupabase) {
+      const row = await supabase.insert("articles", {
+        title,
+        slug,
+        excerpt: excerpt || null,
+        content,
+        cover_image: coverImage,
+        status: status || "draft",
+        category_id: category_id || null,
+        author_id: req.user.id,
+        published_at: publishedAt,
+      });
+      return sendCreated(res, "Artikel berhasil dibuat.", { ...row, cover_image_url: row.cover_image || null });
+    }
 
     const [result] = await pool.query(
       `INSERT INTO articles (title, slug, excerpt, content, cover_image, status, category_id, author_id, published_at)
@@ -157,6 +207,29 @@ const create = async (req, res, next) => {
  */
 const update = async (req, res, next) => {
   try {
+    if (isSupabase) {
+      const existing = await supabase.findById("articles", req.params.id);
+      if (!existing) return sendNotFound(res, "Artikel tidak ditemukan.");
+
+      const { title, content, excerpt, status, category_id } = req.body;
+      const updates = {};
+      if (title) { updates.title = title; updates.slug = generateSlug(title); }
+      if (content !== undefined) updates.content = content;
+      if (excerpt !== undefined) updates.excerpt = excerpt;
+      if (category_id !== undefined) updates.category_id = category_id || null;
+      if (status) {
+        updates.status = status;
+        if (status === "published" && existing.status === "draft") updates.published_at = new Date();
+      }
+      if (req.file) {
+        await supabase.deleteFile(existing.cover_image);
+        updates.cover_image = await supabase.uploadFile(req.file, "articles");
+      }
+      if (Object.keys(updates).length === 0) return sendError(res, "Tidak ada data yang diubah.", 400);
+      const row = await supabase.update("articles", req.params.id, updates);
+      return sendSuccess(res, "Artikel berhasil diperbarui.", { ...row, cover_image_url: row.cover_image || null });
+    }
+
     const [existing] = await pool.query("SELECT * FROM articles WHERE id = ?", [req.params.id]);
     if (existing.length === 0) return sendNotFound(res, "Artikel tidak ditemukan.");
 
@@ -202,6 +275,14 @@ const update = async (req, res, next) => {
  */
 const remove = async (req, res, next) => {
   try {
+    if (isSupabase) {
+      const existing = await supabase.findById("articles", req.params.id);
+      if (!existing) return sendNotFound(res, "Artikel tidak ditemukan.");
+      await supabase.deleteFile(existing.cover_image);
+      await supabase.remove("articles", req.params.id);
+      return sendSuccess(res, "Artikel berhasil dihapus.");
+    }
+
     const [existing] = await pool.query("SELECT * FROM articles WHERE id = ?", [req.params.id]);
     if (existing.length === 0) return sendNotFound(res, "Artikel tidak ditemukan.");
 

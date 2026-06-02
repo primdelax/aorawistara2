@@ -33,7 +33,7 @@ export function ProfilPage() {
             Tentang <span className="text-[#E63946]">{siteName}</span>
           </h1>
           <p className="mt-6 text-white/70 max-w-2xl mx-auto text-lg">
-            Lembaga Khusus dan Pelatihan yang membentuk pribadi unggul melalui keterampilan dan seni.
+            Lembaga Kursus yang membentuk pribadi unggul melalui lifeskill dan seni.
           </p>
         </div>
       </section>
@@ -61,7 +61,7 @@ export function ProfilPage() {
             </h2>
             <p className="mt-6 text-[#0A1F44]/80 leading-relaxed">
               {aboutText ||
-                `${siteName} hadir sebagai Lembaga Khusus dan Pelatihan (LKP) yang menggabungkan keterampilan vokasi dengan ekspresi seni budaya. Kami percaya pendidikan tidak hanya tentang ijazah — tetapi tentang membangun karakter, kepercayaan diri, dan keterampilan yang siap pakai di dunia nyata.`}
+                `${siteName} hadir sebagai Lembaga Kursus yang menggabungkan lifeskill vokasi dengan ekspresi seni budaya. Kami percaya pendidikan tidak hanya tentang ijazah — tetapi tentang membangun karakter, kepercayaan diri, dan lifeskill yang siap pakai di dunia nyata.`}
             </p>
             <p className="mt-4 text-[#0A1F44]/80 leading-relaxed">
               Dengan tagline{' '}

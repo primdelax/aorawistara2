@@ -12,6 +12,24 @@
   text-align: center;
 }
 
+.admin-login-card {
+  animation: admin-login-red-glow 4.8s ease-in-out infinite;
+}
+
+@keyframes admin-login-red-glow {
+  0%, 100% {
+    box-shadow:
+      0 28px 80px rgba(0, 0, 0, 0.42),
+      0 0 18px rgba(230, 57, 70, 0.28);
+  }
+  50% {
+    box-shadow:
+      0 34px 96px rgba(0, 0, 0, 0.5),
+      0 0 34px rgba(230, 57, 70, 0.62),
+      0 0 70px rgba(230, 57, 70, 0.24);
+  }
+}
+
 .galeri-hero-blob {
   position: absolute;
   border-radius: 50%;

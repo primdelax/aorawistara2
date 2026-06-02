@@ -1,5 +1,43 @@
 const { pool } = require("../config/database");
+const { isSupabase } = require("../config/dataProvider");
+const supabase = require("../services/supabaseService");
 const { sendSuccess, sendError } = require("../utils/response");
+const bcrypt = require("bcryptjs");
+
+const USERNAME_RE = /^[A-Za-z0-9]+$/;
+
+const sanitizeUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  username: user.username,
+  email: user.email,
+  role: user.role,
+  is_active: Boolean(user.is_active),
+  created_at: user.created_at,
+});
+
+const normalizeUsername = (username) => String(username || "").trim().toLowerCase();
+
+const validateAdminPayload = ({ name, username, password }, { requirePassword = true } = {}) => {
+  const normalizedUsername = normalizeUsername(username);
+  if (!String(name || "").trim()) return "Nama wajib diisi.";
+  if (!normalizedUsername) return "Username wajib diisi.";
+  if (!USERNAME_RE.test(normalizedUsername)) return "Username hanya boleh berisi huruf dan angka tanpa spasi.";
+  if (normalizedUsername.length < 3 || normalizedUsername.length > 32) return "Username harus antara 3-32 karakter.";
+  if (requirePassword && !password) return "Password wajib diisi.";
+  if (password && String(password).length < 6) return "Password minimal 6 karakter.";
+  return null;
+};
+
+const ensureUniqueUsername = async (username, ignoreId = null) => {
+  if (isSupabase) {
+    const user = await supabase.findOne("users", { username }, "id");
+    return !user || Number(user.id) === Number(ignoreId);
+  }
+
+  const [rows] = await pool.query("SELECT id FROM users WHERE username = ?", [username]);
+  return rows.length === 0 || Number(rows[0].id) === Number(ignoreId);
+};
 
 /**
  * GET /api/dashboard/stats
@@ -7,6 +45,44 @@ const { sendSuccess, sendError } = require("../utils/response");
  */
 const getStats = async (req, res, next) => {
   try {
+    if (isSupabase) {
+      const [users, programs, articles, galleries, categories] = await Promise.all([
+        supabase.list("users", { order: "created_at.desc" }),
+        supabase.list("programs", { order: "created_at.desc" }),
+        supabase.list("articles", { order: "created_at.desc" }),
+        supabase.list("galleries", { order: "created_at.desc" }),
+        supabase.list("categories", { order: "name.asc" }),
+      ]);
+
+      return sendSuccess(res, "Statistik dashboard berhasil diambil.", {
+        users: {
+          total: users.length,
+          admin: users.filter((u) => u.role === "admin").length,
+          user: users.filter((u) => u.role === "user").length,
+          active: users.filter((u) => u.is_active).length,
+        },
+        programs: {
+          total: programs.length,
+          active: programs.filter((p) => p.status === "aktif").length,
+          inactive: programs.filter((p) => p.status === "tidak_aktif").length,
+        },
+        articles: {
+          total: articles.length,
+          published: articles.filter((a) => a.status === "published").length,
+          draft: articles.filter((a) => a.status === "draft").length,
+          total_views: articles.reduce((sum, a) => sum + Number(a.views || 0), 0),
+        },
+        galleries: { total: galleries.length },
+        recent_articles: articles.slice(0, 5),
+        recent_programs: programs.slice(0, 5),
+        programs_by_category: categories.map((category) => ({
+          category_name: category.name,
+          count: programs.filter((program) => Number(program.category_id) === Number(category.id)).length,
+        })),
+        monthly_articles: [],
+      });
+    }
+
     // Total users
     const [[userStats]] = await pool.query(`
       SELECT
@@ -115,10 +191,142 @@ const getStats = async (req, res, next) => {
  */
 const getUsers = async (req, res, next) => {
   try {
+    if (isSupabase) {
+      const rows = await supabase.list("users", { select: "id,name,username,email,role,is_active,created_at", filters: { role: "admin" }, order: "created_at.desc" });
+      return sendSuccess(res, "Data users berhasil diambil.", rows.map(sanitizeUser));
+    }
+
     const [rows] = await pool.query(
-      "SELECT id, name, email, role, is_active, created_at FROM users ORDER BY created_at DESC"
+      "SELECT id, name, username, email, role, is_active, created_at FROM users WHERE role = 'admin' ORDER BY created_at DESC"
     );
-    return sendSuccess(res, "Data users berhasil diambil.", rows);
+    return sendSuccess(res, "Data users berhasil diambil.", rows.map(sanitizeUser));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createUser = async (req, res, next) => {
+  try {
+    const { name, password } = req.body;
+    const username = normalizeUsername(req.body.username);
+    const validation = validateAdminPayload({ name, username, password });
+    if (validation) return sendError(res, validation, 400);
+
+    if (!(await ensureUniqueUsername(username))) {
+      return sendError(res, "Username sudah dipakai. Gunakan username lain.", 409);
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const email = `${username}@aora.local`;
+
+    if (isSupabase) {
+      const row = await supabase.insert("users", {
+        name: String(name).trim(),
+        username,
+        email,
+        password: passwordHash,
+        role: "admin",
+        is_active: true,
+      });
+      return sendSuccess(res, "Akun admin berhasil ditambahkan.", sanitizeUser(row), 201);
+    }
+
+    const [result] = await pool.query(
+      "INSERT INTO users (name, username, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)",
+      [String(name).trim(), username, email, passwordHash, "admin", 1]
+    );
+    const [rows] = await pool.query("SELECT id, name, username, email, role, is_active, created_at FROM users WHERE id = ?", [result.insertId]);
+    return sendSuccess(res, "Akun admin berhasil ditambahkan.", sanitizeUser(rows[0]), 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateUser = async (req, res, next) => {
+  try {
+    const { name, password, is_active } = req.body;
+    const username = req.body.username !== undefined ? normalizeUsername(req.body.username) : undefined;
+    const existing = isSupabase
+      ? await supabase.findById("users", req.params.id)
+      : (await pool.query("SELECT * FROM users WHERE id = ?", [req.params.id]))[0][0];
+
+    if (!existing) return sendError(res, "User tidak ditemukan.", 404);
+
+    const validation = validateAdminPayload({
+      name: name ?? existing.name,
+      username: username ?? existing.username,
+      password,
+    }, { requirePassword: false });
+    if (validation) return sendError(res, validation, 400);
+
+    const finalUsername = username ?? existing.username;
+    if (!(await ensureUniqueUsername(finalUsername, req.params.id))) {
+      return sendError(res, "Username sudah dipakai. Gunakan username lain.", 409);
+    }
+
+    const updates = {};
+    if (name !== undefined) updates.name = String(name).trim();
+    if (username !== undefined) {
+      updates.username = finalUsername;
+      updates.email = `${finalUsername}@aora.local`;
+    }
+    if (password) updates.password = await bcrypt.hash(password, 12);
+    if (is_active !== undefined) {
+      if (Number(existing.id) === Number(req.user.id) && !Boolean(is_active)) {
+        return sendError(res, "Tidak bisa menonaktifkan akun sendiri.", 400);
+      }
+      updates.is_active = Boolean(is_active);
+    }
+
+    if (Object.keys(updates).length === 0) return sendError(res, "Tidak ada data yang diubah.", 400);
+
+    if (isSupabase) {
+      const row = await supabase.update("users", req.params.id, updates);
+      return sendSuccess(res, "Akun admin berhasil diperbarui.", sanitizeUser(row));
+    }
+
+    const setClauses = Object.keys(updates).map((key) => `${key} = ?`).join(", ");
+    await pool.query(`UPDATE users SET ${setClauses} WHERE id = ?`, [...Object.values(updates), req.params.id]);
+    const [rows] = await pool.query("SELECT id, name, username, email, role, is_active, created_at FROM users WHERE id = ?", [req.params.id]);
+    return sendSuccess(res, "Akun admin berhasil diperbarui.", sanitizeUser(rows[0]));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteUser = async (req, res, next) => {
+  try {
+    if (Number(req.params.id) === Number(req.user.id)) {
+      return sendError(res, "Tidak bisa menghapus akun yang sedang login.", 400);
+    }
+
+    const existing = isSupabase
+      ? await supabase.findById("users", req.params.id)
+      : (await pool.query("SELECT id FROM users WHERE id = ?", [req.params.id]))[0][0];
+
+    if (!existing) return sendError(res, "User tidak ditemukan.", 404);
+
+    const deletedUsername = `deleted${req.params.id}${Date.now()}`;
+    const updates = {
+      username: deletedUsername,
+      email: `${deletedUsername}@aora.local`,
+      role: "user",
+      is_active: false,
+    };
+
+    if (isSupabase) {
+      await supabase.update("users", req.params.id, updates);
+      return sendSuccess(res, "Akun admin berhasil dihapus.");
+    }
+
+    await pool.query("UPDATE users SET username = ?, email = ?, role = ?, is_active = ? WHERE id = ?", [
+      updates.username,
+      updates.email,
+      updates.role,
+      0,
+      req.params.id,
+    ]);
+    return sendSuccess(res, "Akun admin berhasil dihapus.");
   } catch (error) {
     next(error);
   }
@@ -130,6 +338,17 @@ const getUsers = async (req, res, next) => {
  */
 const toggleUserStatus = async (req, res, next) => {
   try {
+    if (isSupabase) {
+      const user = await supabase.findById("users", req.params.id);
+      if (!user) return sendError(res, "User tidak ditemukan.", 404);
+      if (Number(user.id) === Number(req.user.id)) return sendError(res, "Tidak bisa mengubah status akun sendiri.", 400);
+      const updated = await supabase.update("users", req.params.id, { is_active: !user.is_active });
+      return sendSuccess(res, `User berhasil ${updated.is_active ? "diaktifkan" : "dinonaktifkan"}.`, {
+        id: updated.id,
+        is_active: Boolean(updated.is_active),
+      });
+    }
+
     const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [req.params.id]);
     if (rows.length === 0) {
       return sendError(res, "User tidak ditemukan.", 404);
@@ -151,4 +370,4 @@ const toggleUserStatus = async (req, res, next) => {
   }
 };
 
-module.exports = { getStats, getUsers, toggleUserStatus };
+module.exports = { getStats, getUsers, createUser, updateUser, deleteUser, toggleUserStatus };

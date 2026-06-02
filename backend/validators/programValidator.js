@@ -20,6 +20,10 @@ const programValidator = [
     .optional()
     .isFloat({ min: 0 }).withMessage("Harga tidak boleh negatif."),
 
+  body("program_type")
+    .optional()
+    .isIn(["intensif", "short_course", "reguler"]).withMessage("Jenis program tidak valid."),
+
   body("status")
     .optional()
     .isIn(["aktif", "tidak_aktif"]).withMessage("Status harus 'aktif' atau 'tidak_aktif'."),
@@ -48,6 +52,10 @@ const updateProgramValidator = [
   body("price")
     .optional()
     .isFloat({ min: 0 }).withMessage("Harga tidak boleh negatif."),
+
+  body("program_type")
+    .optional()
+    .isIn(["intensif", "short_course", "reguler"]).withMessage("Jenis program tidak valid."),
 
   body("status")
     .optional()
