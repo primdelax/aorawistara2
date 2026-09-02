@@ -1,10 +1,28 @@
 // src/app/components/ProfilPage.tsx
 // ✅ site_name, tagline, about_text dari settings API
 
+import type React from 'react'
 import { Logo } from './Logo'
 import { ImageWithFallback } from './figma/ImageWithFallback'
-import { Award, Users, Sparkles, Heart, Target, Eye } from 'lucide-react'
+import { Award, Users, Sparkles, Heart, Target, Eye, Shield, Smile, CheckCircle, Lightbulb, BookOpen, ThumbsUp, Star } from 'lucide-react'
 import { useSettings } from '../hooks/useSettings'
+import type { MisiItem, KeunggulanItem } from '../lib/api'
+
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+  Sparkles,
+  Award,
+  Users,
+  Heart,
+  Target,
+  Eye,
+  Shield,
+  Smile,
+  CheckCircle,
+  Lightbulb,
+  BookOpen,
+  ThumbsUp,
+  Star,
+}
 
 export function ProfilPage() {
   const { settings } = useSettings()
@@ -12,6 +30,44 @@ export function ProfilPage() {
   const siteName  = settings.site_name  || 'Aora'
   const tagline   = settings.tagline    || 'Kami Beda Tapi Luar Biasa'
   const aboutText = settings.about_text || ''
+
+  const visiText = settings.visi || 'Menjadi lembaga pelatihan terdepan yang melahirkan pribadi luar biasa — kreatif, kompeten, dan percaya diri.'
+
+  // parse Misi
+  let misiList: MisiItem[] = []
+  try {
+    if (settings.misi) {
+      misiList = typeof settings.misi === 'string' ? JSON.parse(settings.misi) : settings.misi
+    }
+  } catch (e) {
+    console.error('Gagal memproses data misi:', e)
+  }
+  if (!misiList || misiList.length === 0) {
+    misiList = [
+      { id: 1, num: '01', title: 'Pelatihan Berkualitas', desc: 'Menyelenggarakan pelatihan berbasis praktik dengan kurikulum yang terus diperbarui sesuai kebutuhan industri.' },
+      { id: 2, num: '02', title: 'Pengembangan Karakter', desc: 'Membangun pribadi berdaya saing yang berani tampil beda dengan integritas dan kepercayaan diri.' },
+      { id: 3, num: '03', title: 'Pelestarian Budaya', desc: 'Menjadi rumah bagi seni dan budaya lokal melalui program menari, batik, dan ekspresi kreatif lainnya.' },
+      { id: 4, num: '04', title: 'Komunitas yang Kuat', desc: 'Menumbuhkan jaringan alumni dan komunitas yang saling mendukung di dunia kerja dan kehidupan.' },
+    ]
+  }
+
+  // parse Keunggulan
+  let keunggulanList: KeunggulanItem[] = []
+  try {
+    if (settings.keunggulan) {
+      keunggulanList = typeof settings.keunggulan === 'string' ? JSON.parse(settings.keunggulan) : settings.keunggulan
+    }
+  } catch (e) {
+    console.error('Gagal memproses data keunggulan:', e)
+  }
+  if (!keunggulanList || keunggulanList.length === 0) {
+    keunggulanList = [
+      { id: 1, icon: 'Sparkles', title: 'Beragam Program', desc: 'Dari barista hingga seni budaya — pilihan luas sesuai minat dan bakat.' },
+      { id: 2, icon: 'Award', title: 'Pengajar Berpengalaman', desc: 'Praktisi profesional yang membimbing langsung dengan standar industri.' },
+      { id: 3, icon: 'Users', title: 'Berbasis Komunitas', desc: 'Bergabung dengan komunitas alumni yang aktif dan saling mendukung.' },
+      { id: 4, icon: 'Heart', title: 'Berkarakter & Kreatif', desc: 'Lebih dari sekadar skill — kami membentuk pribadi luar biasa.' },
+    ]
+  }
 
   return (
     <div>
@@ -134,33 +190,20 @@ export function ProfilPage() {
                   letterSpacing: '-0.02em',
                 }}
               >
-                Menjadi lembaga pelatihan terdepan yang melahirkan pribadi luar biasa —
-                <span className="text-[#E63946]"> kreatif, kompeten, dan percaya diri.</span>
+                {visiText}
               </p>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <MissionCard
-              num="01"
-              title="Pelatihan Berkualitas"
-              desc="Menyelenggarakan pelatihan berbasis praktik dengan kurikulum yang terus diperbarui sesuai kebutuhan industri."
-            />
-            <MissionCard
-              num="02"
-              title="Pengembangan Karakter"
-              desc="Membangun pribadi berdaya saing yang berani tampil beda dengan integritas dan kepercayaan diri."
-            />
-            <MissionCard
-              num="03"
-              title="Pelestarian Budaya"
-              desc="Menjadi rumah bagi seni dan budaya lokal melalui program menari, batik, dan ekspresi kreatif lainnya."
-            />
-            <MissionCard
-              num="04"
-              title="Komunitas yang Kuat"
-              desc="Menumbuhkan jaringan alumni dan komunitas yang saling mendukung di dunia kerja dan kehidupan."
-            />
+            {misiList.map((item) => (
+              <MissionCard
+                key={item.id}
+                num={item.num}
+                title={item.title}
+                desc={item.desc}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -188,26 +231,17 @@ export function ProfilPage() {
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <FeatureCard
-              icon={<Sparkles />}
-              title="Beragam Program"
-              desc="Dari barista hingga seni budaya — pilihan luas sesuai minat dan bakat."
-            />
-            <FeatureCard
-              icon={<Award />}
-              title="Pengajar Berpengalaman"
-              desc="Praktisi profesional yang membimbing langsung dengan standar industri."
-            />
-            <FeatureCard
-              icon={<Users />}
-              title="Berbasis Komunitas"
-              desc="Bergabung dengan komunitas alumni yang aktif dan saling mendukung."
-            />
-            <FeatureCard
-              icon={<Heart />}
-              title="Berkarakter & Kreatif"
-              desc="Lebih dari sekadar skill — kami membentuk pribadi luar biasa."
-            />
+            {keunggulanList.map((item) => {
+              const IconComp = ICON_MAP[item.icon] || Sparkles
+              return (
+                <FeatureCard
+                  key={item.id}
+                  icon={<IconComp />}
+                  title={item.title}
+                  desc={item.desc}
+                />
+              )
+            })}
           </div>
         </div>
       </section>

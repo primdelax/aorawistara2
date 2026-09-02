@@ -2,17 +2,19 @@ const { pool } = require("../config/database");
 const { isSupabase } = require("../config/dataProvider");
 const supabase = require("../services/supabaseService");
 const { sendSuccess, sendError } = require("../utils/response");
+const { getUserPermissions, setUserPermissions, getPermissionsMapForUsers } = require("../utils/permissions");
 const bcrypt = require("bcryptjs");
 
 const USERNAME_RE = /^[A-Za-z0-9]+$/;
 
-const sanitizeUser = (user) => ({
+const sanitizeUser = (user, permissions = ["all_access"]) => ({
   id: user.id,
   name: user.name,
   username: user.username,
   email: user.email,
   role: user.role,
   is_active: Boolean(user.is_active),
+  permissions: permissions,
   created_at: user.created_at,
 });
 
@@ -193,13 +195,17 @@ const getUsers = async (req, res, next) => {
   try {
     if (isSupabase) {
       const rows = await supabase.list("users", { select: "id,name,username,email,role,is_active,created_at", filters: { role: "admin" }, order: "created_at.desc" });
-      return sendSuccess(res, "Data users berhasil diambil.", rows.map(sanitizeUser));
+      const userIds = rows.map((r) => r.id);
+      const permMap = await getPermissionsMapForUsers(userIds);
+      return sendSuccess(res, "Data users berhasil diambil.", rows.map((r) => sanitizeUser(r, permMap[r.id] || ["all_access"])));
     }
 
     const [rows] = await pool.query(
       "SELECT id, name, username, email, role, is_active, created_at FROM users WHERE role = 'admin' ORDER BY created_at DESC"
     );
-    return sendSuccess(res, "Data users berhasil diambil.", rows.map(sanitizeUser));
+    const userIds = rows.map((r) => r.id);
+    const permMap = await getPermissionsMapForUsers(userIds);
+    return sendSuccess(res, "Data users berhasil diambil.", rows.map((r) => sanitizeUser(r, permMap[r.id] || ["all_access"])));
   } catch (error) {
     next(error);
   }
@@ -207,7 +213,7 @@ const getUsers = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const { name, password } = req.body;
+    const { name, password, permissions } = req.body;
     const username = normalizeUsername(req.body.username);
     const validation = validateAdminPayload({ name, username, password });
     if (validation) return sendError(res, validation, 400);
@@ -228,7 +234,9 @@ const createUser = async (req, res, next) => {
         role: "admin",
         is_active: true,
       });
-      return sendSuccess(res, "Akun admin berhasil ditambahkan.", sanitizeUser(row), 201);
+
+      const perms = await setUserPermissions(row.id, permissions || ["all_access"]);
+      return sendSuccess(res, "Akun admin berhasil ditambahkan.", sanitizeUser(row, perms), 201);
     }
 
     const [result] = await pool.query(
@@ -236,7 +244,8 @@ const createUser = async (req, res, next) => {
       [String(name).trim(), username, email, passwordHash, "admin", 1]
     );
     const [rows] = await pool.query("SELECT id, name, username, email, role, is_active, created_at FROM users WHERE id = ?", [result.insertId]);
-    return sendSuccess(res, "Akun admin berhasil ditambahkan.", sanitizeUser(rows[0]), 201);
+    const perms = await setUserPermissions(result.insertId, permissions || ["all_access"]);
+    return sendSuccess(res, "Akun admin berhasil ditambahkan.", sanitizeUser(rows[0], perms), 201);
   } catch (error) {
     next(error);
   }
@@ -244,7 +253,7 @@ const createUser = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
-    const { name, password, is_active } = req.body;
+    const { name, password, is_active, permissions } = req.body;
     const username = req.body.username !== undefined ? normalizeUsername(req.body.username) : undefined;
     const existing = isSupabase
       ? await supabase.findById("users", req.params.id)
@@ -278,17 +287,30 @@ const updateUser = async (req, res, next) => {
       updates.is_active = Boolean(is_active);
     }
 
-    if (Object.keys(updates).length === 0) return sendError(res, "Tidak ada data yang diubah.", 400);
-
-    if (isSupabase) {
-      const row = await supabase.update("users", req.params.id, updates);
-      return sendSuccess(res, "Akun admin berhasil diperbarui.", sanitizeUser(row));
+    let updatedPerms = undefined;
+    if (permissions !== undefined) {
+      updatedPerms = await setUserPermissions(req.params.id, permissions);
+    } else {
+      updatedPerms = await getUserPermissions(req.params.id);
     }
 
-    const setClauses = Object.keys(updates).map((key) => `${key} = ?`).join(", ");
-    await pool.query(`UPDATE users SET ${setClauses} WHERE id = ?`, [...Object.values(updates), req.params.id]);
+    if (Object.keys(updates).length === 0 && permissions === undefined) {
+      return sendError(res, "Tidak ada data yang diubah.", 400);
+    }
+
+    if (isSupabase) {
+      const row = Object.keys(updates).length > 0
+        ? await supabase.update("users", req.params.id, updates)
+        : existing;
+      return sendSuccess(res, "Akun admin berhasil diperbarui.", sanitizeUser(row, updatedPerms));
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const setClauses = Object.keys(updates).map((key) => `${key} = ?`).join(", ");
+      await pool.query(`UPDATE users SET ${setClauses} WHERE id = ?`, [...Object.values(updates), req.params.id]);
+    }
     const [rows] = await pool.query("SELECT id, name, username, email, role, is_active, created_at FROM users WHERE id = ?", [req.params.id]);
-    return sendSuccess(res, "Akun admin berhasil diperbarui.", sanitizeUser(rows[0]));
+    return sendSuccess(res, "Akun admin berhasil diperbarui.", sanitizeUser(rows[0], updatedPerms));
   } catch (error) {
     next(error);
   }

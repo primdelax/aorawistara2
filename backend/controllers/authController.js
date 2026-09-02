@@ -5,13 +5,15 @@ const { pool } = require("../config/database");
 const { isSupabase } = require("../config/dataProvider");
 const supabase = require("../services/supabaseService");
 const { sendSuccess, sendCreated, sendError, sendUnauthorized } = require("../utils/response");
+const { getUserPermissions } = require("../utils/permissions");
 
-const publicUser = (user) => ({
+const publicUser = (user, permissions = ["all_access"]) => ({
   id: user.id,
   name: user.name,
   username: user.username,
   email: user.email,
   role: user.role,
+  permissions: permissions,
 });
 
 /**
@@ -34,7 +36,7 @@ const register = async (req, res, next) => {
 
       return sendCreated(res, "Registrasi berhasil.", {
         token,
-        user: publicUser({ id: user.id, name, username, email, role: "user" }),
+        user: publicUser({ id: user.id, name, username, email, role: "user" }, ["all_access"]),
       });
     }
 
@@ -74,7 +76,7 @@ const register = async (req, res, next) => {
 
     return sendCreated(res, "Registrasi berhasil.", {
       token,
-      user: publicUser({ id: result.insertId, name, username, email, role: "user" }),
+      user: publicUser({ id: result.insertId, name, username, email, role: "user" }, ["all_access"]),
     });
   } catch (error) {
     next(error);
@@ -97,10 +99,11 @@ const login = async (req, res, next) => {
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return sendUnauthorized(res, "Username atau password salah.");
 
+      const permissions = await getUserPermissions(user.id);
       const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || "7d" });
       return sendSuccess(res, "Login berhasil.", {
         token,
-        user: publicUser(user),
+        user: publicUser(user, permissions),
       });
     }
 
@@ -126,6 +129,8 @@ const login = async (req, res, next) => {
       return sendUnauthorized(res, "Username atau password salah.");
     }
 
+    const permissions = await getUserPermissions(user.id);
+
     // Generate token
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
@@ -143,7 +148,7 @@ const login = async (req, res, next) => {
 
     return sendSuccess(res, "Login berhasil.", {
       token,
-      user: publicUser(user),
+      user: publicUser(user, permissions),
     });
   } catch (error) {
     next(error);
@@ -178,10 +183,12 @@ const logout = async (req, res, next) => {
  */
 const getMe = async (req, res, next) => {
   try {
+    const permissions = await getUserPermissions(req.user.id);
+
     if (isSupabase) {
       const user = await supabase.findById("users", req.user.id, "id,name,username,email,role,avatar,is_active,created_at");
       if (!user) return sendUnauthorized(res, "User tidak ditemukan.");
-      return sendSuccess(res, "Profil berhasil diambil.", user);
+      return sendSuccess(res, "Profil berhasil diambil.", { ...user, permissions });
     }
 
     const [rows] = await pool.query(
@@ -193,7 +200,7 @@ const getMe = async (req, res, next) => {
       return sendUnauthorized(res, "User tidak ditemukan.");
     }
 
-    return sendSuccess(res, "Profil berhasil diambil.", rows[0]);
+    return sendSuccess(res, "Profil berhasil diambil.", { ...rows[0], permissions });
   } catch (error) {
     next(error);
   }

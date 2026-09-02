@@ -23,6 +23,7 @@ export interface AdminUser {
   username: string
   email?: string
   role: string
+  permissions?: string[]
   is_active?: boolean
   created_at?: string
 }
@@ -107,10 +108,10 @@ export const adminUserApi = {
     const res = await request<{ data: AdminUser[] }>('GET', '/dashboard/users')
     return res.data
   },
-  async create(data: { name: string; username: string; password: string }) {
+  async create(data: { name: string; username: string; password: string; permissions?: string[] }) {
     return request<{ data: AdminUser }>('POST', '/dashboard/users', data)
   },
-  async update(id: number, data: { name?: string; username?: string; password?: string; is_active?: boolean }) {
+  async update(id: number, data: { name?: string; username?: string; password?: string; is_active?: boolean; permissions?: string[] }) {
     return request<{ data: AdminUser }>('PUT', `/dashboard/users/${id}`, data)
   },
   async remove(id: number) {
@@ -249,6 +250,9 @@ export interface SiteSettings {
   desc_intensif?: string
   desc_short_course?: string
   desc_reguler?: string
+  visi?: string
+  misi?: string
+  keunggulan?: string
 }
 
 export const settingsApi = {
@@ -258,6 +262,60 @@ export const settingsApi = {
   },
   async update(data: Partial<SiteSettings>) {
     return request<{ data: SiteSettings }>('PUT', '/settings', data)
+  },
+}
+
+// ─── Visi & Misi ────────────────────────────────────────────
+export interface MisiItem {
+  id: number
+  num: string
+  title: string
+  desc: string
+}
+
+export interface KeunggulanItem {
+  id: number
+  icon: string
+  title: string
+  desc: string
+}
+
+export const visiMisiApi = {
+  async getVisi(): Promise<{ visi: string }> {
+    const res = await request<{ data: { visi: string } }>('GET', '/settings/visi')
+    return res.data
+  },
+  async updateVisi(visi: string) {
+    return request<{ data: { visi: string } }>('PUT', '/settings/visi', { visi })
+  },
+  async getMisi(): Promise<MisiItem[]> {
+    const res = await request<{ data: MisiItem[] }>('GET', '/settings/misi')
+    return res.data
+  },
+  async createMisi(data: { title: string; desc: string }) {
+    return request<{ data: MisiItem }>('POST', '/settings/misi', data)
+  },
+  async updateMisi(id: number, data: { title?: string; desc?: string }) {
+    return request<{ data: MisiItem }>('PUT', `/settings/misi/${id}`, data)
+  },
+  async deleteMisi(id: number) {
+    return request('DELETE', `/settings/misi/${id}`)
+  },
+}
+
+export const keunggulanApi = {
+  async getAll(): Promise<KeunggulanItem[]> {
+    const res = await request<{ data: KeunggulanItem[] }>('GET', '/settings/keunggulan')
+    return res.data
+  },
+  async create(data: { icon: string; title: string; desc: string }) {
+    return request<{ data: KeunggulanItem }>('POST', '/settings/keunggulan', data)
+  },
+  async update(id: number, data: { icon?: string; title?: string; desc?: string }) {
+    return request<{ data: KeunggulanItem }>('PUT', `/settings/keunggulan/${id}`, data)
+  },
+  async remove(id: number) {
+    return request('DELETE', `/settings/keunggulan/${id}`)
   },
 }
 
