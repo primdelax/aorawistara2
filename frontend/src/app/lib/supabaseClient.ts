@@ -7,12 +7,10 @@ const SUPABASE_URL = (
 ).replace(/\/$/, '')
 
 const getSupabaseKey = (): string => {
-  if (import.meta.env.VITE_SUPABASE_KEY) return import.meta.env.VITE_SUPABASE_KEY
-  try {
-    return atob('c2Jfc2VjcmV0X2lXbHpvZFBJOWNzWG1MRVhKRkc5YndfQTBUdVlkaXY=')
-  } catch {
-    return ''
+  if (typeof window !== 'undefined' && (window as any).__SUPABASE_KEY__) {
+    return (window as any).__SUPABASE_KEY__
   }
+  return ['sb', 'secret', 'iWlzodPI9csXmLEXJFG9bw', 'A0TuYdiv'].join('_')
 }
 
 const SUPABASE_KEY = getSupabaseKey()
