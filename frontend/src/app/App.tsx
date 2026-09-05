@@ -16,11 +16,32 @@ import { Settings } from 'lucide-react'
 type Page = 'home' | 'profil' | 'program' | 'galeri' | 'kontak' | 'admin'
 
 export default function App() {
-  const [page, setPage] = useState<Page>('home')
+  const getInitialPage = (): Page => {
+    if (typeof window === 'undefined') return 'home'
+    const hash = window.location.hash.replace('#', '').replace(/^\//, '')
+    if (['home', 'profil', 'program', 'galeri', 'kontak', 'admin'].includes(hash)) {
+      return hash as Page
+    }
+    return 'home'
+  }
+
+  const [page, setPage] = useState<Page>(getInitialPage)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (window.location.hash.replace('#', '').replace(/^\//, '') !== page) {
+      window.location.hash = page === 'home' ? '' : page
+    }
   }, [page])
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const p = getInitialPage()
+      setPage(p)
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   if (page === 'admin') {
     return (

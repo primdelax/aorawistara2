@@ -56,12 +56,33 @@ export function AdminPage({ onExit }: { onExit: () => void }) {
   const [loggedIn, setLoggedIn] = useState(false)
   const [active, setActive] = useState<MenuKey>('dashboard')
   const [user, setUser] = useState(authApi.getUser())
+  const [validating, setValidating] = useState(true) // ✅ loading saat cek session
 
+  // ✅ Validasi session ke server saat AdminPage pertama dibuka
   useEffect(() => {
-    if (authApi.isLoggedIn()) {
-      setLoggedIn(true)
-      setUser(authApi.getUser())
+    const checkSession = async () => {
+      if (authApi.isLoggedIn()) {
+        const valid = await authApi.validateSession()
+        if (valid) {
+          setLoggedIn(true)
+          setUser(authApi.getUser())
+        } else {
+          setLoggedIn(false)
+        }
+      }
+      setValidating(false)
     }
+    checkSession()
+  }, [])
+
+  // ✅ Listen event sesi habis dari mana saja (misal saat CRUD gagal dengan 401)
+  useEffect(() => {
+    const handler = () => {
+      setLoggedIn(false)
+      setUser(null)
+    }
+    window.addEventListener('aora:session-expired', handler)
+    return () => window.removeEventListener('aora:session-expired', handler)
   }, [])
 
   const handleLogin = () => {
@@ -72,6 +93,7 @@ export function AdminPage({ onExit }: { onExit: () => void }) {
   const handleLogout = async () => {
     await authApi.logout()
     setLoggedIn(false)
+    setUser(null)
     onExit()
   }
 
@@ -86,6 +108,18 @@ export function AdminPage({ onExit }: { onExit: () => void }) {
     if (menuKey === 'galeri') return perms.includes('galeri')
     if (menuKey === 'pengaturan') return perms.includes('all_access')
     return false
+  }
+
+  // ✅ Tampilkan spinner saat validasi session berlangsung
+  if (validating) {
+    return (
+      <div className="min-h-screen bg-[#0A1F44] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-white/20 border-t-[#E63946] rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white/60 text-sm">Memeriksa sesi login...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!loggedIn) return <AdminLogin onLogin={handleLogin} onBack={onExit} />

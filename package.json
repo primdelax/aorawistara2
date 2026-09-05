@@ -1,6 +1,14 @@
 {
+  "name": "aorawistara2",
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "deploy": "npm --prefix frontend run deploy"
+  },
   "dependencies": {
     "@astrojs/react": "^5.0.4",
+    "@supabase/server": "^1.5.2",
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.113.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "bcryptjs": "^3.0.3",
