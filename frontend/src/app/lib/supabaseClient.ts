@@ -1,16 +1,38 @@
 // src/app/lib/supabaseClient.ts
 // Direct Supabase Client for GitHub Pages & Serverless Deployments
+//
+// ⚠️  PENTING: Selalu gunakan ANON KEY (bukan service_role key) di browser.
+// Service_role key akan diblokir Supabase dengan error:
+//   "Forbidden use of secret API key in browser"
+// Anon key aman karena dibatasi oleh RLS (Row Level Security) policies.
 import bcrypt from 'bcryptjs'
 
 const SUPABASE_URL = (
   import.meta.env.VITE_SUPABASE_URL || 'https://lmynhhijvqayukxiptqi.supabase.co'
 ).replace(/\/$/, '')
 
+// ✅ Gunakan ANON KEY — aman untuk browser, dibatasi RLS
+// Isi VITE_SUPABASE_ANON_KEY di:
+//   - frontend/.env (development lokal)
+//   - GitHub Secrets → VITE_SUPABASE_ANON_KEY (untuk GitHub Pages)
 const getSupabaseKey = (): string => {
-  if (typeof window !== 'undefined' && (window as any).__SUPABASE_KEY__) {
-    return (window as any).__SUPABASE_KEY__
+  // Prioritas 1: env variable (aman, tidak hardcode)
+  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  if (envKey) return envKey
+
+  // Prioritas 2: injected via window (runtime injection)
+  if (typeof window !== 'undefined' && (window as any).__SUPABASE_ANON_KEY__) {
+    return (window as any).__SUPABASE_ANON_KEY__
   }
-  return ['sb', 'secret', 'iWlzodPI9csXmLEXJFG9bw', 'A0TuYdiv'].join('_')
+
+  // Fallback: tampilkan error yang jelas
+  console.error(
+    '[Supabase] VITE_SUPABASE_ANON_KEY tidak ditemukan!\n' +
+    'Tambahkan di frontend/.env:\n' +
+    '  VITE_SUPABASE_ANON_KEY=eyJ...\n' +
+    'Dapatkan dari: Supabase Dashboard → Project Settings → API → anon key'
+  )
+  return ''
 }
 
 const SUPABASE_KEY = getSupabaseKey()

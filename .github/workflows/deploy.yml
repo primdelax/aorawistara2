@@ -44,6 +44,11 @@ jobs:
           NODE_ENV: production
           VITE_BASE_PATH: /aorawistara2/
           VITE_USE_SUPABASE_DIRECT: "true"
+          # ✅ Anon key dari GitHub Secrets (aman, tidak hardcode di source code)
+          # Setup: GitHub repo → Settings → Secrets → Actions → New secret
+          # Nama secret: VITE_SUPABASE_ANON_KEY
+          # Nilai: ambil dari Supabase Dashboard → Project Settings → API → anon public
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Upload Pages Artifact

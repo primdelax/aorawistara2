@@ -4,6 +4,77 @@
 
 ---
 
+## ❌ Error 0: "Forbidden use of secret API key in browser" ⭐ PENTING
+
+### Apa yang Terjadi
+
+Error ini muncul di browser saat kamu mencoba **login atau CRUD data** di GitHub Pages. Pesan lengkapnya biasanya:
+
+```
+Supabase error (403): Forbidden use of secret API key in browser
+```
+atau
+```
+Error: Supabase error (403)
+```
+
+### Penyebab Teknis
+
+Kode frontend sebelumnya menggunakan **`service_role` key** (kunci `sb_secret_...`) langsung dari browser. Ini **diblokir keras oleh Supabase** karena:
+
+| Jenis Key | Akses | Cocok Untuk |
+|-----------|-------|-------------|
+| `anon` key (format `eyJ...`) | Dibatasi RLS policies | ✅ Browser / GitHub Pages |
+| `service_role` key | Akses penuh, bypass RLS | ✅ Backend server saja ❌ JANGAN di browser |
+
+Supabase sengaja memblokir `service_role` key dari browser demi keamanan. Kalau key ini bocor, siapa pun bisa baca/hapus seluruh database.
+
+### Perbaikan yang Sudah Dilakukan (Kode)
+
+- **`frontend/src/app/lib/supabaseClient.ts`**: Key sekarang diambil dari `VITE_SUPABASE_ANON_KEY` (env variable), bukan hardcode `service_role` key
+- **`.github/workflows/deploy.yml`**: GitHub Actions sekarang meng-inject `secrets.VITE_SUPABASE_ANON_KEY` saat build
+
+### Langkah yang Harus Kamu Lakukan
+
+#### Step 1 — Dapatkan Anon Key
+
+1. Login ke [supabase.com](https://supabase.com) → pilih project kamu
+2. Klik **Project Settings** (ikon gear) → **API**
+3. Di bagian **Project API keys**, salin nilai **`anon public`**
+4. Key dimulai dengan `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+> [!CAUTION]
+> Jangan salin `service_role` — itu untuk backend saja. Salin `anon public`.
+
+#### Step 2 — Tambah GitHub Secret
+
+1. Buka repo GitHub kamu → **Settings** → **Secrets and variables** → **Actions**
+2. Klik **New repository secret**
+3. **Name**: `VITE_SUPABASE_ANON_KEY`
+4. **Value**: paste anon key dari Step 1
+5. Klik **Add secret**
+
+#### Step 3 — Jalankan SQL RLS di Supabase
+
+1. Buka [supabase.com](https://supabase.com) → project → **SQL Editor**
+2. Klik **New query**
+3. Salin isi file [`backend/config/supabase-rls-anon-fix.sql`](file:///c:/Users/MyBook%20Hype%20AMD/Documents/Codex/2026-05-31/aku-ingin-mengirim-mu-project-coding/work/aorawistara2/backend/config/supabase-rls-anon-fix.sql)
+4. Klik **Run**
+
+#### Step 4 — Tambah ke `.env` Lokal (Development)
+
+Edit file `frontend/.env` dan isi `VITE_SUPABASE_ANON_KEY`:
+```env
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+#### Step 5 — Push ke GitHub
+
+Setelah semua langkah di atas, push kode ke branch `main`. GitHub Actions akan otomatis rebuild dan deploy ke GitHub Pages dengan anon key yang benar.
+
+---
+
+
 ## ❌ Error 1: "Koneksi ke backend gagal. Pastikan backend server sudah berjalan"
 
 ### Penyebab
